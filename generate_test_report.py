@@ -19,8 +19,11 @@ LINK = "https://firefoxci.taskcluster-artifacts.net/{}/0/public/full-task-graph.
 def reporter_parser():
 	parser = argparse.ArgumentParser("This tool can be used to generate a report of where eveyrthing is " +
 									 "currently running.")
-	parser.add_argument('--decision-task-id', type=str, nargs=1, default='',
+	parser.add_argument('--decision-task-id', type=str, default='',
 						help='The decision task to get the full-task-graph.json file from.')
+	parser.add_argument('--full-task-graph-path', type=str, default='',
+						help='A path to a full-task-graph.json artifact to use instead of '
+						'obtaining it from a decision task.')
 	parser.add_argument('--tests', type=str, nargs='+', default=['raptor', 'browsertime'],
 						help='The tests to build a report for (pattern matched). ' +
 						'Defaults to raptor and browsertime.')
@@ -72,18 +75,23 @@ def generate_report(
 		platforms,
 		platform_breakdown=False,
 		branch_breakdown=False,
-		match_all_tests=False
+		match_all_tests=False,
+		ftg_path=''
 	):
 
 	# Get the graph
-	dt = decision_task or DEFAULT_TASK
-	cached_data = "%s.json" % dt
-	if not os.path.exists(cached_data):
-		ftg = get_json(LINK.format(dt))
-		with open(cached_data, 'w') as f:
-			json.dump(ftg,f)
+	if not ftg_path:
+		dt = decision_task or DEFAULT_TASK
+		cached_data = "%s.json" % dt
+		if not os.path.exists(cached_data):
+			ftg = get_json(LINK.format(dt))
+			with open(cached_data, 'w') as f:
+				json.dump(ftg,f)
+		else:
+			with open(cached_data, 'r') as f:
+				ftg = json.load(f)
 	else:
-		with open(cached_data, 'r') as f:
+		with open(ftg_path, 'r') as f:
 			ftg = json.load(f)
 
 	## FILTER
@@ -129,7 +137,10 @@ def generate_report(
 			split_data[first] = {}
 		if second not in split_data[first]:
 			split_data[first][second] = []
-		split_data[first][second].extend(test_info['attributes']['run_on_projects'])
+		projects = test_info['attributes']['run_on_projects']
+		if not projects:
+			projects = ['none']
+		split_data[first][second].extend(projects)
 
 	if branch_breakdown:
 		# Reorder the data
@@ -159,7 +170,14 @@ def view_report(report, output, ignore_no_projects=False, branch_breakdown=False
 
 		printed = False
 		for second, projects in second_info.items():
-			if ignore_no_projects and not projects:
+			def _check_empty(projects):
+				if len(projects) == 0:
+					return True
+				if len(projects) > 1:
+					return False
+				if projects[0] == 'none':
+					return True
+			if ignore_no_projects and _check_empty(projects):
 				continue
 			if not branch_breakdown:
 				print(indent + second + ': ' + ', '.join(projects))
@@ -184,7 +202,8 @@ if __name__=="__main__":
 		args.platforms,
 		platform_breakdown=args.platform_breakdown,
 		branch_breakdown=args.branch_breakdown,
-		match_all_tests=args.match_all_tests
+		match_all_tests=args.match_all_tests,
+		ftg_path=args.full_task_graph_path
 	)
 	if report:
 		view_report(
