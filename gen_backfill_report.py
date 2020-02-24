@@ -8,6 +8,7 @@ import argparse
 import os
 import json
 import re
+import signal
 import threading
 import time
 import urllib
@@ -190,7 +191,7 @@ def generate_backfill_report(start_date='', end_date='', branches=['autoland']):
 			(
 				data['build.revision'][c],
 				data['repo.branch.name'][c],
-				c,
+				(c+1),
 				total_groups
 			)
 		)
@@ -223,6 +224,11 @@ def generate_backfill_report(start_date='', end_date='', branches=['autoland']):
 
 			push_data[pushid][fname] = {'url': url, 'data': None}
 
+		def handler(signum, frame):
+			raise Exception("Timed out.")
+
+		signal.signal(signal.SIGALRM, handler)
+
 		def download(url, storage):
 			"""Downloads a JSON through a thread"""
 			global TOTAL_REQUESTS
@@ -234,44 +240,50 @@ def generate_backfill_report(start_date='', end_date='', branches=['autoland']):
 
 			TOTAL_REQUESTS += 1
 			print("Downloading %s" % url)
-			storage['data'] = get_json(url)
+			try:
+				# Timeout after 10 seconds
+				signal.alarm(10)
+				storage['data'] = get_json(url)
+			except Exception:
+				pass
 			TOTAL_REQUESTS -= 1
 
-		# [WIP] Fails quite often with timeouts when running on 1 year of data.
+		# [WIP] Fails quite often with timeouts
+		# when running on large amounts of data.
 		#
 		# Download all the artifacts - batch them in case
 		# we are looking very far back.
-		# threads = []
-		# for _, push_files in push_data.items():
-		# 	for file, file_info in push_files.items():
-		# 		t = threading.Thread(
-		# 			target=download,
-		# 			args=(file_info['url'], file_info)
-		# 		)
-		# 		t.daemon = True
-		#
-		# 		t.start()
-		# 		threads.append(t)
-		# for t in threads:
-		# 	t.join()
+		threads = []
+		for _, push_files in push_data.items():
+			for file, file_info in push_files.items():
+				t = threading.Thread(
+					target=download,
+					args=(file_info['url'], file_info)
+				)
+				t.daemon = True
+		
+				t.start()
+				threads.append(t)
+		for t in threads:
+			t.join()
 
 		# Get all of the TASKIDs of the backfilled jobs
 		taskids = []
 		for pid, push_files in push_data.items():
-			# [WIP] Fails quite often with timeouts.
+			# [WIP] Fails quite often with timeouts on large datasets.
 			#
-			# tasks_running = push_files['to-run']['data']
-			# labeled_tasks = push_files['label-to-taskid']['data']
-			# if not tasks_running or not labeled_tasks: continue
+			tasks_running = push_files['to-run']['data']
+			labeled_tasks = push_files['label-to-taskid']['data']
+			if not tasks_running or not labeled_tasks: continue
 
-			try:
-				print("Getting %s" % push_files['to-run']['url'])
-				tasks_running = get_json(push_files['to-run']['url'])
-				print("Getting %s" % push_files['label-to-taskid']['url'])
-				labeled_tasks = get_json(push_files['label-to-taskid']['url'])
-			except Exception:
-				print("Failed on push %s" % pid)
-				continue
+			# try:
+			# 	print("Getting %s" % push_files['to-run']['url'])
+			# 	tasks_running = get_json(push_files['to-run']['url'])
+			# 	print("Getting %s" % push_files['label-to-taskid']['url'])
+			# 	labeled_tasks = get_json(push_files['label-to-taskid']['url'])
+			# except Exception:
+			# 	print("Failed on push %s" % pid)
+			# 	continue
 
 			# Artifacts don't exist - skip them
 			if 'code' in tasks_running or \
