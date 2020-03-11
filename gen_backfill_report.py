@@ -56,6 +56,24 @@ AD_BACKFILL_QUERY = {
 
 
 """
+This query is used to determine the owners of the backfill
+request so that we can filter backfills based on owners.
+
+To get specific tasks, this condition will be added to the
+query: {"in":{"task.id": [<BACKFILL_TASK_IDS>]}},
+"""
+AD_BK_OWNER_QUERY = {
+	"from":"task",
+	"where":{"and":[
+		{"eq":{"treeherder.symbol":"Bk"}},
+		{"in":{"task.tags.name":["action.context.clientId"]}}
+	]},
+	"select": ["task.tags.value", "task.id"],
+	"limit": 10000
+}
+
+
+"""
 `where` clause will be created in the script
 
 It will be similar to this:
@@ -117,6 +135,8 @@ def backfill_parser():
 						help="The end date for where to start looking for backfilled jobs.")
 	parser.add_argument("--branches", type=str, nargs="+", default=["autoland"],
 						help="The branch to find backfilled jobs in.")
+	parser.add_argument("--owners", type=str, nargs="+", default=[],
+						help="The owners to search for in backfilled tasks.")
 	parser.add_argument("--symbols", type=str, nargs="+", default=[],
 						help="The task group symbols to search for.")
 	parser.add_argument("--talos", action="store_true", default=False,
@@ -200,6 +220,37 @@ def query_activedata(query_json):
 	return data
 
 
+def get_owner_information(owners, taskids):
+	"""
+	Uses the given task IDs to determine the owner or
+	person who created them.
+	"""
+	filter_by_owners = {}
+
+	AD_BK_OWNER_QUERY["where"]["and"].append(
+		{"in":{"task.id": taskids}},
+	)
+	owner_data = query_activedata(AD_BK_OWNER_QUERY)
+
+	for c, taskid in enumerate(owner_data["task.id"]):
+		possible_owners = [o for o in owner_data["task.tags.value"][c] if o]
+		if not possible_owners:
+			# Missing owner information
+			continue
+
+		# There should only every be one owner. If
+		# either of the requested owners match it,
+		# then we keep this task and download
+		# artifacts from it.
+		task_owner = possible_owners[0]
+		for owner in owners:
+			if owner in task_owner:
+				filter_by_owners[taskid] = True
+				break
+
+	return filter_by_owners
+
+
 def generate_backfill_report(
 		start_date="",
 		end_date="",
@@ -211,6 +262,7 @@ def generate_backfill_report(
 		symbols=[],
 		branches=["autoland"],
 		find_long_tasks=False,
+		owners=[],
 		additional_conditions=[],
 		no_cache=False,
 		clobber_cache=False
@@ -281,6 +333,14 @@ def generate_backfill_report(
 
 	debug("Analyzing backfills performed on the revisions: %s" % data["build.revision"])
 
+	# Find the tasks that are specific to the requested owners
+	filter_by_owners = {}
+	if owners:
+		# Get the owners of the backfills  if needed
+		print("Getting backfill task owner information...")
+		filter_by_owners = get_owner_information(owners, data["run.taskcluster.id"])
+
+
 	# Go through all the URL groupings and match up data from each PUSHID
 	alltaskids = []
 	total_groups = len(data["job.details.url"])
@@ -294,6 +354,8 @@ def generate_backfill_report(
 
 	for c, url_grouping in enumerate(data["job.details.url"]):
 		if not url_grouping: continue
+		if filter_by_owners and data["run.taskcluster.id"][c] not in filter_by_owners:
+			continue
 
 		print(
 			"\nProcessing %s from %s (%s/%s)" %
@@ -491,6 +553,7 @@ def main():
 		start_date=args.start_date,
 		end_date=args.end_date,
 		task_name_regex=args.task_name_regex,
+		owners=args.owners,
 		talos=args.talos,
 		raptor=args.raptor,
 		browsertime=args.browsertime,
