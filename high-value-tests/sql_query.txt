@@ -1,0 +1,46 @@
+SET @frameworks = 'raptor,browsertime';
+SET @repositories = 'autoland,mozilla-inbound';
+
+SELECT summary.bug_number AS bug_number,alert.id,
+    alert.created,
+    alert.is_regression,
+    alert.amount_abs,
+    alert.amount_pct,
+    IFNULL(alert.related_summary_id, alert.summary_id) AS summary_id,
+    CASE summary.status
+        WHEN 0 THEN 'untriaged'
+        WHEN 1 THEN 'downstream'
+        WHEN 2 THEN 'reassigned'
+        WHEN 3 THEN 'invalid'
+        WHEN 4 THEN 'improvement'
+        WHEN 5 THEN 'investigating'
+        WHEN 6 THEN 'wontfix'
+        WHEN 7 THEN 'fixed'
+        WHEN 8 THEN 'backedout'
+        WHEN 9 THEN 'confirming'
+    END AS status,
+    summary.notes,
+    framework.name,
+    platform.platform,
+    signature.suite,
+    commit.revision,
+    repository.name,
+    CASE signature.test
+        WHEN '' THEN 'geomean'
+        ELSE signature.test
+    END AS test
+FROM performance_alert AS alert
+INNER JOIN performance_alert_summary AS summary ON ((alert.related_summary_id IS NULL AND summary.id = alert.summary_id) OR summary.id = alert.related_summary_id)
+INNER JOIN performance_signature AS signature ON signature.id = alert.series_signature_id
+INNER JOIN performance_framework AS framework ON framework.id = signature.framework_id
+INNER JOIN repository ON repository.id = signature.repository_id
+INNER JOIN machine_platform AS platform ON platform.id = signature.platform_id
+INNER JOIN commit AS commit ON commit.push_id = summary.push_id
+WHERE FIND_IN_SET(repository.name, @repositories)
+    AND FIND_IN_SET(framework.name, @frameworks)
+    AND summary.status = 8
+  AND (summary.notes IS NULL OR summary.notes NOT LIKE '%#harness-update%') -- ignore harness updates
+  AND (summary.notes IS NULL OR summary.notes NOT LIKE '%#infra%') -- ignore false alerts caused by infra changes
+  AND alert.created >= "2019-01-01"
+  AND platform.platform LIKE '%android%'
+  AND alert.is_regression=1
