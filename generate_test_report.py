@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 Used to check what tests are running where. Primarily for Raptor and Browsertime.
 """
@@ -39,6 +40,10 @@ def reporter_parser():
 						help='Only tests which match all --tests entries will be selected.')
 	parser.add_argument('--ignore-no-projects', action='store_true', default=False,
 						help='Prevents displaying tests with no projects.')
+	parser.add_argument('--field', type=str, default='attributes.run_on_projects',
+						help='The field to search for (defaults to `attributes.run_on_projects`).')
+	parser.add_argument('--show-all-fields', action="store_true", default=False,
+						help='Show all available fields in the given FTG.')
 	return parser
 
 def get_json(url, params=None):
@@ -69,6 +74,33 @@ def pattern_match_all(name, patterns):
 			found = False
 	return found
 
+
+def _get_all_fields(info, parent=''):
+	fields = []
+	keys = list(info.keys())
+	for key in keys:
+		if parent != "":
+			newparent = '{}.{}'.format(parent, key)
+		else:
+			newparent = key
+		if isinstance(info[key], dict):
+			fields.extend(
+				_get_all_fields(info[key], parent=newparent)
+			)
+		else:
+			fields.append(newparent)
+	return fields
+
+
+def print_fields(ftg):
+	allfields = set()
+	for test, info in ftg.items():
+		allfields = set(_get_all_fields(info)) | allfields
+
+	for field in sorted(allfields):
+		print(field)
+
+
 def generate_report(
 		decision_task,
 		tests,
@@ -76,6 +108,8 @@ def generate_report(
 		platform_breakdown=False,
 		branch_breakdown=False,
 		match_all_tests=False,
+		field='attributes.run_on_projects',
+		show_all_fields=False,
 		ftg_path=''
 	):
 
@@ -115,6 +149,21 @@ def generate_report(
 		print("Could not find any matching test+platform combinations.")
 		return {}
 
+	if show_all_fields:
+		print_fields(filt_ftg)
+		return None
+
+	def get_field_value(info, field):
+		# Field is combined with `.` to 
+		# denote nested entries.
+		value = info
+		path = field.split('.')
+		for key in path:
+			value = value[key]
+		if not isinstance(value, list):
+			value = [str(value)]
+		return value
+
 	## BREAKDOWN
 	# Split test from platform name
 	split_data = {}
@@ -137,7 +186,7 @@ def generate_report(
 			split_data[first] = {}
 		if second not in split_data[first]:
 			split_data[first][second] = []
-		projects = test_info['attributes']['run_on_projects']
+		projects = get_field_value(test_info, field)
 		if not projects:
 			projects = ['none']
 		split_data[first][second].extend(projects)
@@ -203,6 +252,8 @@ if __name__=="__main__":
 		platform_breakdown=args.platform_breakdown,
 		branch_breakdown=args.branch_breakdown,
 		match_all_tests=args.match_all_tests,
+		field=args.field,
+		show_all_fields=args.show_all_fields,
 		ftg_path=args.full_task_graph_path
 	)
 	if report:
