@@ -213,12 +213,12 @@ def view_report(report, output, ignore_no_projects=False, branch_breakdown=False
 	"""
 	print("Report Breakdown\n")
 
-	for first, second_info in report.items():
+	for first, second_info in sorted(report.items()):
 		indent = '    '
 		print(first)
 
 		printed = False
-		for second, projects in second_info.items():
+		for second, projects in sorted(second_info.items()):
 			def _check_empty(projects):
 				if len(projects) == 0:
 					return True
