@@ -172,9 +172,17 @@ def generate_report(
 		if '/opt-' in test:
 			splitter = '/opt-'
 		if splitter not in test:
-			continue
-		platform, test = test.split(splitter)
-		platform = platform + splitter.replace('-', '')
+			platform, test = "unknown-platform", test
+			try:
+				platform = test_info.get("dependencies", {}).get("build")
+				if not platform:
+					platform = "unknown-platform"
+			except Exception as e:
+				print("Error trying to get platform for %s" % test)
+				print("%s %s" % (e.__class__.__name__, e))
+		else:
+			platform, test = test.split(splitter)
+			platform = platform + splitter.replace('-', '')
 
 		first = test
 		second = platform
