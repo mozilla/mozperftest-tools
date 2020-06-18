@@ -50,6 +50,8 @@ def csv_generation_parser():
                         help="Path to the output directory. Defaults to current working directory.")
     parser.add_argument("--try", action="store_true", dest="try_data", default=False,
                         help="Include data from the try server.")
+    parser.add_argument("--medians", action="store_true", default=False,
+                        help="Gather the medians instead of the replicates. Defaults to True.")
     return parser
 
 
@@ -109,6 +111,7 @@ def build_csv(
         output=None,
         cache_path=None,
         try_data=False,
+        medians=False,
     ):
     """Generates a CSV file containing per-commit fenix data
     for a given test name.
@@ -173,7 +176,12 @@ def build_csv(
             continue
 
         try:
-            nallph.append((fenix.commit(rev).committed_date, phd["suites"][0]["value"], rev))
+            commitdate = fenix.commit(rev).committed_date
+            vals = phd["suites"][0].get("subtests",[{}])[0].get("replicates", [])
+            if medians:
+                vals = [phd["suites"][0]["value"]]
+            for val in vals:
+                nallph.append((commitdate, val, rev))
         except ValueError:
             # Some commits don't exist which is really weird - I don't
             # understand how there's a build for them when we can't find them
@@ -209,5 +217,6 @@ if __name__=="__main__":
         device_name=args.device,
         output=args.output,
         cache_path=args.cache_path,
-        try_data=args.try_data
+        try_data=args.try_data,
+        medians=args.medians
     )
