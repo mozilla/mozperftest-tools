@@ -22,9 +22,9 @@ RETRY_SLEEP = 10
 AD_QUERY = {
     "from":"task",
     "where":{"and":[
+        {"in":{"repo.branch.name":["mozilla-central"]}},
         {"regex":{"run.name":".*fenix.*"}},
-        {"regex":{"run.name":".*perftest.*"}},
-        {"in":{"repo.branch.name":["mozilla-central"]}}
+        {"regex":{"run.name":".*perftest.*"}}
     ]},
     "select":["task.artifacts", "action.start_time", "task.id"],
     "limit":100000
@@ -48,6 +48,8 @@ def csv_generation_parser():
                         help="Path to a local Fenix github repo.")
     parser.add_argument("-o", "--output", type=str, default=None,
                         help="Path to the output directory. Defaults to current working directory.")
+    parser.add_argument("--try", action="store_true", dest="try_data", default=False,
+                        help="Include data from the try server.")
     return parser
 
 
@@ -105,7 +107,8 @@ def build_csv(
         test_name="applink",
         device_name="p2",
         output=None,
-        cache_path=None
+        cache_path=None,
+        try_data=False,
     ):
     """Generates a CSV file containing per-commit fenix data
     for a given test name.
@@ -132,6 +135,8 @@ def build_csv(
         {"regex": {"run.name": ".*%s.*" % test_name}},
         {"regex": {"run.name": ".*-%s-.*" % device_name}}
     ])
+    if try_data:
+        AD_QUERY["where"]["and"][0]["in"]["repo.branch.name"].append("try")
     data = query_activedata(AD_QUERY)
 
     allph = []
@@ -140,6 +145,7 @@ def build_csv(
 
         for artifact in artifacts:
             if not artifact: continue
+            if not isinstance(artifact, dict): continue
 
             ph = artifact["url"].split("/")[-1]
             if "perfherder" not in ph or ph.startswith("perfherder"): continue
@@ -188,7 +194,6 @@ def build_csv(
     try:
         from matplotlib import pyplot as plt
         plt.figure()
-        plt.plot([v[0] for v in allphs], [v[1] for v in allphs])
         plt.scatter([v[0] for v in allphs], [v[1] for v in allphs])
         plt.show()
     except ImportError:
@@ -200,8 +205,9 @@ if __name__=="__main__":
     args = csv_generation_parser().parse_args()
     build_csv(
         args.fenix_repo,
-        args.test_name,
-        args.device,
-        args.output,
-        args.cache_path
+        test_name=args.test_name,
+        device_name=args.device,
+        output=args.output,
+        cache_path=args.cache_path,
+        try_data=args.try_data
     )
