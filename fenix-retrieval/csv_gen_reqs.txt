@@ -1,0 +1,4 @@
+redo
+gitpython
+numpy
+requests
