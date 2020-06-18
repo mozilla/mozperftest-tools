@@ -26,7 +26,7 @@ AD_QUERY = {
 		{"regex":{"run.name":".*perftest.*"}},
 		{"in":{"repo.branch.name":["mozilla-central"]}}
 	]},
-	"select":["task.artifacts", "action.start_time"],
+	"select":["task.artifacts", "action.start_time", "task.id"],
 	"limit":100000
 }
 
@@ -135,24 +135,27 @@ def build_csv(
 	data = query_activedata(AD_QUERY)
 
 	allph = []
-	for artifacts in data["task.artifacts"]:
+	for c, artifacts in enumerate(data["task.artifacts"]):
 		if not artifacts: continue
+
 		for artifact in artifacts:
 			if not artifact: continue
 
 			ph = artifact["url"].split("/")[-1]
 			if "perfherder" not in ph or ph.startswith("perfherder"): continue
 
-			allph.append((artifact["url"], ph, ph.split("-")[0]))
+			allph.append(
+				(artifact["url"], ph, ph.split("-")[0], data["task.id"][c])
+			)
 	
 	## Download the perfherder data and get its commit date
 	nallph = []
-	for url, file, rev in allph:
+	for url, file, rev, taskid in allph:
+		file = f"{taskid}-{test_name}-{device_name}-{file}"
 		fp = pathlib.Path(cache_path, file)
 		if not fp.exists():
 			print(f"Downloading to {fp}" )
 			download_file(url, fp)
-		
 		with fp.open() as f:
 			phd = json.load(f)
 
