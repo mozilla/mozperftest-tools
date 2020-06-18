@@ -185,6 +185,15 @@ def build_csv(
 		writer.writerows(allphs)
 	print(f"Finished generation. Data contained in {str(csvfile)}")
 
+	try:
+		from matplotlib import pyplot as plt
+		plt.figure()
+		plt.plot([v[0] for v in allphs], [v[1] for v in allphs])
+		plt.scatter([v[0] for v in allphs], [v[1] for v in allphs])
+		plt.show()
+	except ImportError:
+		print("Skipping print stage, cannot find matplotlib")
+		return
 
 if __name__=="__main__":
 	args = csv_generation_parser().parse_args()

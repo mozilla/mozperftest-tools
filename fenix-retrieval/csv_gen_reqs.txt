@@ -1,4 +1,5 @@
 redo
 gitpython
 numpy
+matplotlib
 requests
