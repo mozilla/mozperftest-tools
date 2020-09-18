@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import collections
 import csv
 import datetime
 import git
@@ -9,6 +10,7 @@ import numpy as np
 import pathlib
 from redo import retry
 import requests
+import statistics
 import tempfile
 
 try:
@@ -55,6 +57,8 @@ def csv_generation_parser():
                         help="Include data from the try server.")
     parser.add_argument("--replicates", action="store_true", default=False,
                         help="Gather the replicates instead of the medians.")
+    parser.add_argument("--median-per-day", action="store_true", default=False,
+                        help="Returns a single result per day - the median - instead of per commit runs")
     return parser
 
 
@@ -115,10 +119,15 @@ def build_csv(
         cache_path=None,
         try_data=False,
         medians=False,
+        median_per_day=False
     ):
     """Generates a CSV file containing per-commit fenix data
     for a given test name.
     """
+    if not medians and median_per_day:
+        raise NotImplementedError("Please specify either --replicates or --median-per-day. I didn't know\n" +
+                                  "how these would work together so I didn't implement it.")
+
     if cache_path:
         cache_path = pathlib.Path(cache_path)
         cache_path.mkdir(parents=True, exist_ok=True)
@@ -194,6 +203,9 @@ def build_csv(
     # Sort the data by time
     allphs = sorted(nallph, key=lambda x: x[0])
 
+    if median_per_day:
+        allphs = transform_to_median_per_day(allphs)
+
     ## Store as a CSV
     csvfile_human_readable = pathlib.Path(output, f"{test_name}-{device_name}.csv")
     csvfile_raw = pathlib.Path(output, f"{test_name}-{device_name}-raw.csv")
@@ -210,6 +222,19 @@ def build_csv(
     except ImportError:
         print("Skipping print stage, cannot find matplotlib")
         return
+
+def transform_to_median_per_day(data):
+    date_to_iterations = collections.defaultdict(list)
+    for row in data:
+        dt = datetime.datetime.fromtimestamp(row[0])
+        ymd = datetime.datetime(dt.year, dt.month, dt.day)
+        date_to_iterations[ymd].append(row[1])
+
+    out_data = []
+    for i, (date, times) in enumerate(date_to_iterations.items()):
+        transformed_row = [date.timestamp(), statistics.median(times), 'N/A']
+        out_data.append(transformed_row)
+    return out_data
 
 def write_csv(csvfile, data):
     with csvfile.open("w") as f:
@@ -242,5 +267,6 @@ if __name__=="__main__":
         output=args.output,
         cache_path=args.cache_path,
         try_data=args.try_data,
-        medians=not args.replicates
+        medians=not args.replicates,
+        median_per_day=args.median_per_day
     )
