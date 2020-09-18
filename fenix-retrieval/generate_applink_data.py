@@ -158,7 +158,7 @@ def build_csv(
             allph.append(
                 (artifact["url"], ph, ph.split("-")[0], data["task.id"][c])
             )
-    
+
     ## Download the perfherder data and get its commit date
     nallph = []
     for url, file, rev, taskid in allph:
@@ -203,13 +203,20 @@ def build_csv(
 
     try:
         from matplotlib import pyplot as plt
+        plot_allphs = optimize_for_plotting(allphs)
         plt.figure()
-        plt.scatter([v[0] for v in allphs], [v[1] for v in allphs])
+        plt.plot_date([v[0] for v in plot_allphs], [v[1] for v in plot_allphs])
         plt.show()
     except ImportError:
         print("Skipping print stage, cannot find matplotlib")
         return
 
+def optimize_for_plotting(data):
+    import matplotlib.dates
+    def transform_row(row):
+        matplot_date = matplotlib.dates.epoch2num(row[0])
+        return [matplot_date] + row[1:]
+    return [transform_row(list(row)) for row in data]
 
 if __name__=="__main__":
     args = csv_generation_parser().parse_args()
