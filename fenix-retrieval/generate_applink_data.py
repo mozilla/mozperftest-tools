@@ -52,8 +52,8 @@ def csv_generation_parser():
                         help="Path to the output directory. Defaults to current working directory.")
     parser.add_argument("--try", action="store_true", dest="try_data", default=False,
                         help="Include data from the try server.")
-    parser.add_argument("--medians", action="store_true", default=False,
-                        help="Gather the medians instead of the replicates. Defaults to True.")
+    parser.add_argument("--replicates", action="store_true", default=False,
+                        help="Gather the replicates instead of the medians.")
     return parser
 
 
@@ -220,5 +220,5 @@ if __name__=="__main__":
         output=args.output,
         cache_path=args.cache_path,
         try_data=args.try_data,
-        medians=args.medians
+        medians=not args.replicates
     )
