@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+import datetime
 import git
 import json
 import urllib
@@ -194,12 +195,11 @@ def build_csv(
     allphs = sorted(nallph, key=lambda x: x[0])
 
     ## Store as a CSV
-    csvfile = pathlib.Path(output, f"{test_name}-{device_name}.csv")
-    with csvfile.open("w") as f:
-        writer = csv.writer(f)
-        writer.writerow(["times", "data", "revision"])
-        writer.writerows(allphs)
-    print(f"Finished generation. Data contained in {str(csvfile)}")
+    csvfile_human_readable = pathlib.Path(output, f"{test_name}-{device_name}.csv")
+    csvfile_raw = pathlib.Path(output, f"{test_name}-{device_name}-raw.csv")
+    write_csv(csvfile_human_readable, optimize_for_human_readability(allphs))
+    write_csv(csvfile_raw, allphs)
+    print(f"Finished generation. Data contained in {str(csvfile_human_readable)} & {str(csvfile_raw)}")
 
     try:
         from matplotlib import pyplot as plt
@@ -210,6 +210,21 @@ def build_csv(
     except ImportError:
         print("Skipping print stage, cannot find matplotlib")
         return
+
+def write_csv(csvfile, data):
+    with csvfile.open("w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["times", "data", "revision"])
+        writer.writerows(data)
+
+def optimize_for_human_readability(data):
+    def transform_row(row):
+        dt = datetime.datetime.fromtimestamp(row[0])
+        date_str = dt.strftime('%Y-%m-%d %H:%M:%S')
+        rounded_timestamp = round(row[1])
+        abbrev_commit = row[2][:9]
+        return [date_str, rounded_timestamp, abbrev_commit]
+    return [transform_row(list(row)) for row in data]
 
 def optimize_for_plotting(data):
     import matplotlib.dates
