@@ -30,15 +30,17 @@ AD_QUERY = {
     "limit":100000
 }
 
+DEFAULT_TEST_NAME = "view"
+
 
 def csv_generation_parser():
     """Parser for the CSV generation script."""
     parser = argparse.ArgumentParser("Run this tool to build CSVs containing Fenix data from some tasks " +
                                      "running with the multi-commit paradigm in mozilla-central " +
                                      "(must have perfherder data).")
-    parser.add_argument("-t", "--test-name", type=str, default="applink",
+    parser.add_argument("-t", "--test-name", type=str, default=DEFAULT_TEST_NAME,
                         help="The name of the test to get data from (must exist in the task name). " +
-                        "Defaults to `applink`.")
+                        "Defaults to `view`. To get view data before Jul. 31, 2020, use `applink`.")
     parser.add_argument("-d", "--device", type=str, choices=["p2", "g5"], default="p2",
                         help="Device to get data from.")
     parser.add_argument("-c", "--cache-path", type=str, default=None,
@@ -106,7 +108,7 @@ def download_file(url, target, retry_sleep=RETRY_SLEEP, attempts=3):
 
 def build_csv(
         fenix_repo,
-        test_name="applink",
+        test_name=DEFAULT_TEST_NAME,
         device_name="p2",
         output=None,
         cache_path=None,
