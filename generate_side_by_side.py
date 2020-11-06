@@ -31,7 +31,7 @@ from task_processor import get_task_data_paths
 
 TASK_IDS = \
     "https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/" + \
-    "gecko.v2.{}.revision.{}.firefox"
+    "gecko.v2.{}.revision.{}.taskgraph"
 
 TASK_INFO = "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/{}"
 
@@ -276,6 +276,15 @@ if __name__=="__main__":
         filename = output.name
         output = output.parents[0]
         output.mkdir(parents=True, exist_ok=True)
+
+    # Make sure we remove the old side-by-side visualization
+    # for the FFMPEG operations
+    cold_path = pathlib.Path(output, "cold-" + filename)
+    warm_path = pathlib.Path(output, "warm-" + filename)
+    if cold_path.exists():
+        cold_path.unlink()
+    if warm_path.exists():
+        warm_path.unlink()
 
     # Get the task group IDs for the revisions
     base_revision_id = find_task_group_id(args.base_revision, args.base_branch)
