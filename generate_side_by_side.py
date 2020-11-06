@@ -88,9 +88,9 @@ def get_json(url, params=None):
     return json.loads(r)
 
 
-def find_task_group_id(revision):
+def find_task_group_id(revision, branch):
     # Find a task ID from this revision first
-    task_ids_url = TASK_IDS.format(revision)
+    task_ids_url = TASK_IDS.format(branch, revision)
 
     print("Downloading task ids from: %s" % task_ids_url)
     task_ids_data = get_json(task_ids_url)
