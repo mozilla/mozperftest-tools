@@ -52,13 +52,19 @@ def side_by_side_parser():
                         help="The base revision to compare a new revision to.")
     parser.add_argument("--new-branch", type=str, default="autoland",
                         help="Branch to search for the new revision.")
-    parser.add_argument("--test-name", type=str, required=True,
+    parser.add_argument("--test-name", "--base-test-name", type=str, required=True, dest="test_name",
                         help="The name of the test task to get videos from.")
-    parser.add_argument("--platform", type=str, required=True,
-                        help="Platforms to return results for. Defaults to all.")
+    parser.add_argument("--new-test-name", type=str, default=None,
+                        help="The name of the test task to get videos from in the new revision.")
+    parser.add_argument("--platform", "--base-platform", type=str, required=True, dest="platform",
+                        help="Platform to return results for.")
+    parser.add_argument("--new-platform", type=str, default=None,
+                        help="Platform to return results for in the new revision.")
     parser.add_argument("--overwrite", action="store_true", default=False,
                         help="If set, the downloaded task group data will be deleted before " +
                         "it gets re-downloaded.")
+    parser.add_argument("--search-crons", action="store_true", default=False,
+                        help="If set, we will search for the tasks within the cron jobs as well. ")
     parser.add_argument("--skip-download", action="store_true", default=False,
                         help="If set, we won't try to download artifacts again and we'll " +
                         "try using what already exists in the output folder.")
@@ -88,8 +94,8 @@ def get_json(url, params=None):
     return json.loads(r)
 
 
-def find_task_group_id(revision, branch):
-    # Find a task ID from this revision first
+def find_task_group_id(revision, branch, search_crons=False):
+    # Find the task IDs from this revision first
     task_ids_url = TASK_IDS.format(branch, revision)
 
     print("Downloading task ids from: %s" % task_ids_url)
@@ -97,14 +103,18 @@ def find_task_group_id(revision, branch):
     if "tasks" not in task_ids_data or len(task_ids_data["tasks"]) == 0:
         raise Exception("Cannot find any task IDs for %s!" % revision)
 
-    task_id = task_ids_data["tasks"][0]["taskId"]
+    task_group_ids = []
+    for task in task_ids_data["tasks"]:
+        # Only find the task group ID for the decision task if we
+        # don't need to search for cron tasks
+        if not search_crons and not task["namespace"].endswith("decision"):
+            continue
+        task_group_url = TASK_INFO.format(task["taskId"])
+        print("Downloading task group id from: %s" % task_group_url)
+        task_info = get_json(task_group_url)
+        task_group_ids.append(task_info["taskGroupId"])
 
-    # Find the task group ID now
-    task_group_url = TASK_INFO.format(task_id)
-    print("Downloading task group id from: %s" % task_group_url)
-    task_info = get_json(task_group_url)
-
-    return task_info["taskGroupId"]
+    return task_group_ids
 
 
 def find_videos(artifact_dir):
@@ -142,15 +152,11 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix=""):
     """Calculates a similarity score for two groupings of videos.
 
     The technique works as follows:
-        1. Get the last live site test.
-        2. For each 15x15 video pairings, build a cross-correlation matrix:
+        2. For each UxV video pairings, build a cross-correlation matrix:
             1. Get each of the videos and calculate their histograms
                across the full videos.
             2. Calculate the correlation coefficient between these two.
         3. Average the cross-correlation matrix to obtain the score.
-
-    The 2D similarity score is the same, except that it builds a histogram
-    from the final frame instead of the full video.
 
     Args:
         old_videos: List of old videos.
@@ -158,7 +164,7 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix=""):
         output: Location to output videos with low similarity scores.
         prefix: Prefix a string to the output.
     Returns:
-        Two similarity scores (3D, 2D) as a float.
+        A dictionary containing the worst pairing and the 3D similarity score.
     """
 
     def _get_frames(video):
@@ -287,62 +293,89 @@ if __name__=="__main__":
         warm_path.unlink()
 
     # Get the task group IDs for the revisions
-    base_revision_id = find_task_group_id(args.base_revision, args.base_branch)
-    new_revision_id = find_task_group_id(args.new_revision, args.new_branch)
+    base_revision_ids = find_task_group_id(
+        args.base_revision,
+        args.base_branch,
+        search_crons=args.search_crons
+    )
+    new_revision_ids = find_task_group_id(
+        args.new_revision,
+        args.new_branch,
+        search_crons=args.search_crons
+    )
+
+    base_task_dirs = [pathlib.Path(output, revid) for revid in base_revision_ids]
+    new_task_dirs = [pathlib.Path(output, revid) for revid in new_revision_ids]
     if overwrite:
-        for task_dir in (
-            pathlib.Path(output, base_revision_id),
-            pathlib.Path(output, new_revision_id),
-        ):
+        for task_dir in base_task_dirs + new_task_dirs:
             if task_dir.exists():
                 print("Removing existing task group folder: %s" % str(task_dir))
                 shutil.rmtree(str(task_dir))
 
-    # Download the artifacts
-    base_task_dir = str(pathlib.Path(output, base_revision_id))
-    new_task_dir = str(pathlib.Path(output, new_revision_id))
-    if not args.skip_download:
-        base_task_dir, _ = artifact_downloader(
-            base_revision_id,
-            output_dir=str(output),
-            test_suites=[args.test_name],
-            platform=args.platform,
-            artifact_to_get=["browsertime-results"],
-            unzip_artifact=True,
-            download_failures=True,
-            ingest_continue=False
-        )
-        new_task_dir, _ = artifact_downloader(
-            new_revision_id,
-            output_dir=str(output),
-            test_suites=[args.test_name],
-            platform=args.platform,
-            artifact_to_get=["browsertime-results"],
-            unzip_artifact=True,
-            download_failures=True,
-            ingest_continue=False
-        )
+    def _search_for_paths(rev_ids):
+        found_paths = []
+        for rev_id in rev_ids:
+            if found_paths:
+                break
+            # Get the paths to the directory holding the artifacts
+            found_paths = list(get_task_data_paths(
+                rev_id,
+                str(output),
+                artifact="browsertime-results"
+            ).values())
+        return found_paths
 
-    # Get the paths to the directory holding the artifacts
-    base_paths = list(get_task_data_paths(
-        base_revision_id,
-        str(output),
-        artifact="browsertime-results"
-    ).values())
-    new_paths = list(get_task_data_paths(
-        new_revision_id,
-        str(output),
-        artifact="browsertime-results"
-    ).values())
+    # Download the artifacts
+    if not args.skip_download:
+        base_paths = []
+        for base_revision_id in base_revision_ids:
+            if base_paths:
+                break
+            artifact_downloader(
+                base_revision_id,
+                output_dir=str(output),
+                test_suites=[args.test_name],
+                platform=args.platform,
+                artifact_to_get=["browsertime-results"],
+                unzip_artifact=True,
+                download_failures=True,
+                ingest_continue=False
+            )
+            base_paths = _search_for_paths([base_revision_id])
+
+        new_paths = []
+        for new_revision_id in new_revision_ids:
+            if new_paths:
+                break
+            artifact_downloader(
+                new_revision_id,
+                output_dir=str(output),
+                test_suites=[args.new_test_name or args.test_name],
+                platform=args.new_platform or args.platform,
+                artifact_to_get=["browsertime-results"],
+                unzip_artifact=True,
+                download_failures=True,
+                ingest_continue=False
+            )
+            new_paths = _search_for_paths([new_revision_id])
+    else:
+        base_paths = _search_for_paths(base_revision_ids)
+        new_paths = _search_for_paths(new_revision_ids)
 
     # Make sure we only downloaded one task
     if not base_paths or len(base_paths) > 1:
         raise Exception(
-            "Too many artifacts downloaded for %s, can't compare!" % base_revision
+            "Too many artifacts downloaded for %s, can't compare! Paths: %s" % (
+                args.base_revision,
+                base_paths
+            )
         )
     if not new_paths or len(new_paths) > 1:
         raise Exception(
-            "Too many artifacts downloaded for %s, can't compare!" % new_revision
+            "Too many artifacts downloaded for %s, can't compare! Paths: %s" % (
+                args.new_revision,
+                new_paths
+            )
         )
 
     # Gather the videos and split them between warm and cold
