@@ -249,18 +249,48 @@ def find_lowest_similarity(base_videos, new_videos, output, prefix):
     )
 
 
-def build_side_by_side(base_video, new_video, output):
-    subprocess.check_output([
-        "ffmpeg",
-        "-i", str(base_video),
-        "-i", str(new_video),
-        "-filter_complex", "[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]",
+def build_side_by_side(base_video, new_video, output_dir, filename):
+    before_vid = pathlib.Path(output_dir, "before.mp4")
+    after_vid = pathlib.Path(output_dir, "after.mp4")
+    if before_vid.exists():
+        before_vid.unlink()
+    if after_vid.exists():
+        after_vid.unlink()
+
+    overlay_text = "fps=fps=30,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:" + \
+              "timecode=00\\\\:00\\\\:00\\\\:00:rate=30*1000/1001:fontcolor=white:x=(w-tw)/2:" + \
+              "y=10:box=1:boxcolor=0x00000000@1[vid]"
+    common_options = [
         "-map", "[vid]",
         "-c:v", "libx264",
         "-crf", "23",
         "-preset", "veryfast",
-        str(output)
-    ])
+    ]
+
+    # Generate the before and after videos
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i", str(base_video),
+            "-filter_complex", overlay_text.format("BEFORE"),
+        ] + common_options + [str(before_vid)]
+    )
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i", str(new_video),
+            "-filter_complex", overlay_text.format("AFTER"),
+        ] + common_options + [str(after_vid)]
+    )
+
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i", str(before_vid),
+            "-i", str(after_vid),
+            "-filter_complex", "[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]",
+        ] + common_options + [str(pathlib.Path(output_dir, filename))]
+    )
 
 
 if __name__=="__main__":
@@ -363,16 +393,18 @@ if __name__=="__main__":
         new_paths = _search_for_paths(new_revision_ids)
 
     # Make sure we only downloaded one task
+    failure_msg = "Not enough or too many artifacts downloaded for %s, can't compare! " + \
+            "Found paths: %s \nTry using --search-crons if you are sure the task exists."
     if not base_paths or len(base_paths) > 1:
         raise Exception(
-            "Too many artifacts downloaded for %s, can't compare! Paths: %s" % (
+            failure_msg % (
                 args.base_revision,
                 base_paths
             )
         )
     if not new_paths or len(new_paths) > 1:
         raise Exception(
-            "Too many artifacts downloaded for %s, can't compare! Paths: %s" % (
+            failure_msg % (
                 args.new_revision,
                 new_paths
             )
@@ -403,9 +435,9 @@ if __name__=="__main__":
 
     # Build up the side-by-side comparisons now
     output_name = str(pathlib.Path(output, "cold-" + filename))
-    build_side_by_side(cold_pairing["oldvid"], cold_pairing["newvid"], output_name)
+    build_side_by_side(cold_pairing["oldvid"], cold_pairing["newvid"], output, "cold-" + filename)
     print("Successfully built a side-by-side cold comparison: %s" % output_name)
 
     output_name = str(pathlib.Path(output, "warm-" + filename))
-    build_side_by_side(warm_pairing["oldvid"], warm_pairing["newvid"], output_name)
+    build_side_by_side(warm_pairing["oldvid"], warm_pairing["newvid"], output, "warm-" + filename)
     print("Successfully built a side-by-side warm comparison: %s" % output_name)
