@@ -5,6 +5,8 @@ Used to check what tests are running where. Primarily for Raptor and Browsertime
 import argparse
 import os
 import json
+from enum import Enum
+from typing import Iterable
 
 try:
 	from urllib.parse import urlencode
@@ -40,11 +42,14 @@ def reporter_parser():
 						help='Only tests which match all --tests entries will be selected.')
 	parser.add_argument('--ignore-no-projects', action='store_true', default=False,
 						help='Prevents displaying tests with no projects.')
-	parser.add_argument('--field', type=str, default='attributes.run_on_projects',
+	parser.add_argument('--fields', type=str, default=['attributes.run_on_projects'],
 						help='The field to search for (defaults to `attributes.run_on_projects`).')
 	parser.add_argument('--show-all-fields', action="store_true", default=False,
 						help='Show all available fields in the given FTG.')
+	parser.add_argument('--locate', type=str, default="",
+						help='Documents which jobs is running on which repo.')
 	return parser
+
 
 def get_json(url, params=None):
 	print("Requesting full-task-graph.json from: %s" % url)
@@ -55,6 +60,7 @@ def get_json(url, params=None):
 
 	return json.loads(r)
 
+
 def pattern_match(name, patterns):
 	if not patterns:
 		return True
@@ -64,6 +70,7 @@ def pattern_match(name, patterns):
 			found = True
 			break
 	return found
+
 
 def pattern_match_all(name, patterns):
 	if not patterns:
@@ -108,10 +115,12 @@ def generate_report(
 		platform_breakdown=False,
 		branch_breakdown=False,
 		match_all_tests=False,
-		field='attributes.run_on_projects',
+		fields=['attributes.run_on_projects'],
 		show_all_fields=False,
 		ftg_path=''
 	):
+	if args.locate:
+		fields.append('task.extra.treeherder.tier')
 
 	# Get the graph
 	if not ftg_path:
@@ -131,13 +140,22 @@ def generate_report(
 	## FILTER
 	# Filter out all tests that are not wanted
 	filt_test_ftg = {}
-	for test in ftg:
-		if match_all_tests:
-			if pattern_match_all(test, tests):
-				filt_test_ftg[test] = ftg[test]
-		else:
-			if pattern_match(test, tests):
-				filt_test_ftg[test] = ftg[test]
+	if type(ftg) == list:
+		for test in ftg:
+			if match_all_tests:
+				if pattern_match_all(test, tests):
+					filt_test_ftg[test] = ftg[test]
+			else:
+				if pattern_match(test, tests):
+					filt_test_ftg[test] = ftg[test]
+	elif type(ftg) == dict:
+		for task_id, test in ftg.items():
+			if match_all_tests:
+				if pattern_match_all(test['label'], tests):
+					filt_test_ftg[test] = ftg[test]
+			else:
+				if pattern_match(test['label'], tests):
+					filt_test_ftg[test['label']] = ftg[task_id]
 
 	# Filter out all platforms that are not wanted
 	filt_ftg = {}
@@ -164,10 +182,35 @@ def generate_report(
 			value = [str(value)]
 		return value
 
+	def get_fields_value(info, fields):
+		# Field is combined with `.` to
+		# denote nested entries.
+		values = []
+		for field in fields:
+			path = field.split('.')
+			pivot = info
+			for key in path:
+				pivot = pivot[key]
+			if isinstance(pivot, list):
+				pivot = ''.join(pivot)
+			values.append(str(pivot))
+		return values
+
 	## BREAKDOWN
 	# Split test from platform name
 	split_data = {}
 	for test, test_info in filt_ftg.items():
+		if args.locate:
+			# if test_info.get('label'):
+			# 	test = test_info['label']
+			if args.locate == 'fenix':
+				if test_info.get('kind') not in ('browsertime', 'visual-metrics',):
+					continue
+				if 'mozilla-mobile/fenix/blob' in test_info['task']["metadata"]["source"] and \
+						test_info['task']['extra']['treeherder-platform'] not in test_info['label']:
+					test = f"test-{test_info['task']['extra']['treeherder-platform']}-{test_info['label']}"
+			if not test.startswith('test-'):
+				continue
 		splitter = '/pgo-'
 		if '/opt-' in test:
 			splitter = '/opt-'
@@ -194,9 +237,9 @@ def generate_report(
 			split_data[first] = {}
 		if second not in split_data[first]:
 			split_data[first][second] = []
-		projects = get_field_value(test_info, field)
-		if not projects:
-			projects = ['none']
+		projects = get_fields_value(test_info, fields)
+		if not args.locate and not projects[0]:
+			projects[0] = 'None'
 		split_data[first][second].extend(projects)
 
 	if branch_breakdown:
@@ -213,6 +256,179 @@ def generate_report(
 		split_data = new_split_data
 
 	return split_data
+
+
+class Filters():
+	REPOS = [
+		{'name': 'mozilla-central', 'type': 'location'},
+		{'name': 'mozilla-beta', 'type': 'location'},
+		{'name': 'trunk', 'type': 'location'}
+	]
+	FENIX_REPOS = [{'name': 'fenix', 'matches': ('all',), 'type': 'location'}]
+	TIER = [{'name': 'tier', 'matches': ('1', '2', '3',), 'multivariant': True, 'type': 'tier'}]
+	COMPONENTS = [{'name': 'webextension', 'matches': ('raptor',)}, 'browsertime']
+	DESKTOP_APPS = ['firefox', 'chrome', 'chromium']
+	MOBILE_APPS = ['geckoview', 'fenix', 'refbrow', 'fennec']
+	FENIX_APP = ['fenix']
+	DESKTOP_OS = ['linux', 'windows', 'macosx']
+	MOBILE_DEVICES = ['p2', 'g5']
+	VARIANTS = [{'name': 'fission', 'matches': ('fis',)}]
+	PLATFORM_FILTERS = [
+		{'name': 'webrender', 'matches': ('wr', 'qr',)},
+		'shippable'
+	]
+	TYPES = [
+		{'name': 'pageload', 'matches': ('tp6',)},
+		'vismet',
+		{
+			'name': 'benchmark',
+			'matches': (
+				'assorted-dom',
+				'ares6',
+				'jetstream2',
+				'motionmark',
+				'speedometer',
+				'stylebench',
+				'sunspider',
+				'unity-webgl',
+				'wasm-godot',
+				'wasm-misc',
+				'webaudio',
+				'youtube-playback'
+			),
+			'multivariant': True
+		}
+	]
+	TALOS = [
+		'chrome',
+		{'name': 'basic compositor video', 'matches': ('bcv',)},
+		'damp',
+		'dromaeojs',
+		{'name': 'g', 'matches': ('g1', 'g2', 'g3', 'g4', 'g5',), 'multivariant': True},
+		'profiling',
+		'motionmark',
+		'other',
+		'perf-reftest',
+		'realworld-webextensions',
+		'singletons',
+		{'name': 'sessionrestore', 'matches': ('sessionrestore-many-windows',)},
+		'svgr',
+		'tabswitch',
+		'tp5o',
+		'webgl',
+		'xperf',
+		'bcv'
+	]
+	DESKTOP_FILTERS = REPOS + TIER + COMPONENTS + DESKTOP_APPS + PLATFORM_FILTERS + VARIANTS + TYPES + DESKTOP_OS
+	MOBILE_FILTERS = REPOS + TIER + COMPONENTS + MOBILE_APPS + PLATFORM_FILTERS + VARIANTS + TYPES + MOBILE_DEVICES
+	FENIX_FILTERS = TIER + COMPONENTS + FENIX_APP + PLATFORM_FILTERS + VARIANTS + TYPES + MOBILE_DEVICES
+	TALOS_FILTERS = REPOS + TIER + TALOS + PLATFORM_FILTERS + VARIANTS + DESKTOP_OS
+
+
+def locate_jobs(report):
+	jobs = []
+	plain_filters = []
+	for device, tests in report.items():
+		# if device.startswith("test"):
+		if 'browsertime' in args.tests or 'raptor' in args.tests:
+			if args.locate == 'desktop':
+				if not any(os in device for os in Filters.DESKTOP_OS):
+					continue
+				filters = Filters.DESKTOP_FILTERS
+			elif args.locate == 'mobile' or args.locate == 'android':
+				if not any(os in device for os in Filters.MOBILE_DEVICES):
+					continue
+				filters = Filters.MOBILE_FILTERS
+			elif args.locate == 'fenix':
+				if not any(os in device for os in Filters.MOBILE_DEVICES):
+					continue
+				filters = Filters.FENIX_FILTERS
+			else:
+				raise Exception("Invalid --locate param: [desktop, mobile, android, fenix]")
+		else:
+			if args.locate == 'talos':
+				filters = Filters.TALOS_FILTERS
+			else:
+				raise Exception("Invalid --locate param: [talos]")
+
+		if '/' in device:
+			os, build_type = device.split('/')
+		else:
+			os = device
+		for test, repos in tests.items():
+			repo_list = repos[0]
+			tier = repos[1]
+			signature = f"{device}-{test}: {repo_list}/tier{tier}"
+			job = {
+				'device': os,
+				'build_type': build_type or '',
+				'test_name': test,
+				'repos': ','.join(repo_list),
+				'tier': tier
+			}
+			for filter in filters:
+				if type(filter) == str:
+					# append to header
+					if filter not in plain_filters:
+						plain_filters.append(filter)
+					if filter in signature:
+						job[filter] = True
+				elif type(filter) == dict:
+					# append to header
+					if filter['name'] not in plain_filters:
+						plain_filters.append(filter['name'])
+					if filter.get('multivariant'):
+						for match in filter['matches']:
+							if filter.get('type') == 'tier':
+								job[filter['name']] = tier
+							elif match in signature:
+								job[filter['name']] = match
+					# elif filter.get('matches') in signature or filter['name'] in signature:
+					elif filter.get('type') != 'location' \
+						and (any(match in signature for match in filter.get('matches', ('',))) \
+							or filter['name'] in signature):
+						job[filter['name']] = True
+					elif filter.get('type') == 'location':
+						if 'all/tier' in signature:
+							job[filter['name']] = True
+						elif any(match in signature for match in filter.get('matches', ('None',))) \
+								or filter['name'] in signature:
+							job[filter['name']] = True
+
+			jobs.append(job)
+	format_to_sheet(jobs, plain_filters)
+
+
+def format_to_sheet(report, filters):
+	headings = 'device, test_name, '
+	content = []
+	for item in report:
+		row = ''
+		row = append_column(row, item['device'])
+		row = append_column(row, item['test_name'])
+		for heading in filters:
+			row = append_column(row, item.get(heading, ""))
+		if not content:
+			content.append(headings + ', '.join(filters))
+		else:
+			content.append(row)
+	if len(content) == 1:
+		print("There are no jobs for the selected criteria.")
+	else:
+		for line in content:
+			print(line)
+
+
+def append_column(content, value='', indent=''):
+	SEPARATOR = ','
+	if value is True:
+		value = 'Yes'
+	if not content:
+		res = value + SEPARATOR
+	else:
+		res = content + indent + value + SEPARATOR
+	return res
+
 
 def view_report(report, output, ignore_no_projects=False, branch_breakdown=False):
 	"""
@@ -250,6 +466,7 @@ def view_report(report, output, ignore_no_projects=False, branch_breakdown=False
 		print("")
 	return
 
+
 if __name__=="__main__":
 	args = reporter_parser().parse_args()
 
@@ -260,14 +477,18 @@ if __name__=="__main__":
 		platform_breakdown=args.platform_breakdown,
 		branch_breakdown=args.branch_breakdown,
 		match_all_tests=args.match_all_tests,
-		field=args.field,
+		fields=args.fields,
 		show_all_fields=args.show_all_fields,
 		ftg_path=args.full_task_graph_path
 	)
 	if report:
-		view_report(
-			report,
-			args.output,
-			ignore_no_projects=args.ignore_no_projects,
-			branch_breakdown=args.branch_breakdown
-		)
+		if args.locate:
+			locate_jobs(report)
+		else:
+			view_report(
+				report,
+				args.output,
+				ignore_no_projects=args.ignore_no_projects,
+				branch_breakdown=args.branch_breakdown
+			)
+
