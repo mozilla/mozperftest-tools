@@ -63,6 +63,8 @@ def side_by_side_parser():
     parser.add_argument("--overwrite", action="store_true", default=False,
                         help="If set, the downloaded task group data will be deleted before " +
                         "it gets re-downloaded.")
+    parser.add_argument("--most-similar", action="store_true", default=False,
+                        help="If set, we'll search for a video pairing that is the most similar.")
     parser.add_argument("--search-crons", action="store_true", default=False,
                         help="If set, we will search for the tasks within the cron jobs as well. ")
     parser.add_argument("--skip-download", action="store_true", default=False,
@@ -148,7 +150,7 @@ def find_videos(artifact_dir):
     }
 
 
-def get_similarity(old_videos_info, new_videos_info, output, prefix=""):
+def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_similar=False):
     """Calculates a similarity score for two groupings of videos.
 
     The technique works as follows:
@@ -215,13 +217,16 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix=""):
 
     print("Average 3D similarity: %s" % str(np.round(similarity, 5)))
 
-    minind = np.unravel_index(np.argmin(xcorr, axis=None), xcorr.shape)
+    if most_similar:
+        inds = np.unravel_index(np.argmax(xcorr, axis=None), xcorr.shape)
+    else:
+        inds = np.unravel_index(np.argmin(xcorr, axis=None), xcorr.shape)
 
-    oldvid = old_videos_info[minind[0]]["path"]
+    oldvid = old_videos_info[inds[0]]["path"]
     oldvidnewpath = str(pathlib.Path(output, "%sold_video.mp4" % prefix))
     shutil.copyfile(oldvid, oldvidnewpath)
 
-    newvid = new_videos_info[minind[1]]["path"]
+    newvid = new_videos_info[inds[1]]["path"]
     newvidnewpath = str(pathlib.Path(output, "%snew_video.mp4" % prefix))
     shutil.copyfile(newvid, newvidnewpath)
 
@@ -232,7 +237,7 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix=""):
     }
 
 
-def find_lowest_similarity(base_videos, new_videos, output, prefix):
+def find_lowest_similarity(base_videos, new_videos, output, prefix, most_similar=False):
     def _open_data(file):
         return cv2.VideoCapture(str(file))
     return get_similarity(
@@ -245,40 +250,64 @@ def find_lowest_similarity(base_videos, new_videos, output, prefix):
             for f in new_videos
         ],
         output,
-        prefix
+        prefix,
+        most_similar=most_similar
     )
 
 
 def build_side_by_side(base_video, new_video, output_dir, filename):
     before_vid = pathlib.Path(output_dir, "before.mp4")
     after_vid = pathlib.Path(output_dir, "after.mp4")
+    before_rs_vid = pathlib.Path(output_dir, "before-rs.mp4")
+    after_rs_vid = pathlib.Path(output_dir, "after-rs.mp4")
+
     if before_vid.exists():
         before_vid.unlink()
     if after_vid.exists():
         after_vid.unlink()
+    if before_rs_vid.exists():
+        before_rs_vid.unlink()
+    if after_rs_vid.exists():
+        after_rs_vid.unlink()
 
-    overlay_text = "fps=fps=30,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:" + \
-              "timecode=00\\\\:00\\\\:00\\\\:00:rate=30*1000/1001:fontcolor=white:x=(w-tw)/2:" + \
+    overlay_text = "fps=fps=60,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:" + \
+              "timecode=00\\\\:00\\\\:00\\\\:00:rate=60*1000/1001:fontcolor=white:x=(w-tw)/2:" + \
               "y=10:box=1:boxcolor=0x00000000@1[vid]"
     common_options = [
         "-map", "[vid]",
         "-c:v", "libx264",
-        "-crf", "23",
+        "-crf", "18",
         "-preset", "veryfast",
     ]
+
+    # Resample
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i", str(base_video),
+            "-filter:v", "fps=fps=60",
+        ] + [str(before_rs_vid)]
+    )
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i", str(new_video),
+            "-filter:v", "fps=fps=60",
+        ] + [str(after_rs_vid)]
+    )
 
     # Generate the before and after videos
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(base_video),
+            "-i", str(before_rs_vid),
             "-filter_complex", overlay_text.format("BEFORE"),
         ] + common_options + [str(before_vid)]
     )
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(new_video),
+            "-i", str(after_rs_vid),
             "-filter_complex", overlay_text.format("AFTER"),
         ] + common_options + [str(after_vid)]
     )
@@ -288,8 +317,8 @@ def build_side_by_side(base_video, new_video, output_dir, filename):
             "ffmpeg",
             "-i", str(before_vid),
             "-i", str(after_vid),
-            "-filter_complex", "[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]",
-        ] + common_options + [str(pathlib.Path(output_dir, filename))]
+            "-filter_complex", "hstack",
+        ] + [str(pathlib.Path(output_dir, filename))]
     )
 
 
@@ -421,7 +450,8 @@ if __name__=="__main__":
         base_videos["cold"],
         new_videos["cold"],
         str(output),
-        "cold_"
+        "cold_",
+        most_similar=args.most_similar
     )
 
     gc.collect()
@@ -430,7 +460,8 @@ if __name__=="__main__":
         base_videos["warm"],
         new_videos["warm"],
         str(output),
-        "warm_"
+        "warm_",
+        most_similar=args.most_similar
     )
 
     # Build up the side-by-side comparisons now
