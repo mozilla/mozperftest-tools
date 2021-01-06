@@ -63,6 +63,10 @@ def side_by_side_parser():
     parser.add_argument("--overwrite", action="store_true", default=False,
                         help="If set, the downloaded task group data will be deleted before " +
                         "it gets re-downloaded.")
+    parser.add_argument("--cold", action="store_true", default=False,
+                        help="If set, we'll only look at cold pageload tests.")
+    parser.add_argument("--warm", action="store_true", default=False,
+                        help="If set, we'll only look at warm pageload tests.")
     parser.add_argument("--most-similar", action="store_true", default=False,
                         help="If set, we'll search for a video pairing that is the most similar.")
     parser.add_argument("--search-crons", action="store_true", default=False,
@@ -172,26 +176,51 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
     def _get_frames(video):
         """Gets all frames from a video into a list."""
         allframes = []
+        orange_pixind = 0
+        orange_frameind = 0
+        frame_count = 0
+        check_for_orange = True
         while video.isOpened():
             ret, frame = video.read()
             if ret:
                 # Convert to gray to simplify the process
                 allframes.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+
+                # Check if it's orange still
+                if check_for_orange:
+                    frame = allframes[-1]
+                    histo, _, _ = plt.hist(np.asarray(frame).flatten(), bins=255)
+
+                    maxi = np.argmax(histo)
+                    if not orange_pixind:
+                        orange_pixind = maxi
+                    elif maxi == orange_pixind:
+                        orange_frameind = frame_count
+                    else:
+                        check_for_orange = False
+
+                frame_count += 1
+
             else:
                 video.release()
                 break
-        return allframes
+
+        return allframes[orange_frameind:], orange_frameind
 
     nhists = []
 
     old_videos = [entry["data"] for entry in old_videos_info]
     new_videos = [entry["data"] for entry in new_videos_info]
 
+    new_orange_frameinds = []
+    old_orange_frameinds = []
     total_vids = min(len(old_videos), len(new_videos))
     xcorr = np.zeros((total_vids, total_vids))
 
     for i in range(total_vids):
-        datao = np.asarray(_get_frames(old_videos[i]))
+        datao, old_orange_frameind = _get_frames(old_videos[i])
+        datao = np.asarray(datao)
+        old_orange_frameinds.append(old_orange_frameind)
 
         histo, _, _ = plt.hist(datao.flatten(), bins=255)
 
@@ -199,7 +228,9 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
             write_same_line("Comparing old video %s to new video %s" % (i+1, j+1))
             if i == 0:
                 # Only calculate the histograms once; it takes time
-                datan = np.asarray(_get_frames(new_videos[j]))
+                datan, new_orange_frameind = _get_frames(new_videos[j])
+                datan = np.asarray(datan)
+                new_orange_frameinds.append(new_orange_frameind)
 
                 histn, _, _ = plt.hist(datan.flatten(), bins=255)
 
@@ -233,7 +264,9 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
     return {
         "sim3": np.round(similarity, 5),
         "oldvid": oldvidnewpath,
-        "newvid": newvidnewpath
+        "oldvid_ind": old_orange_frameinds[inds[0]],
+        "newvid": newvidnewpath,
+        "newvid_ind": new_orange_frameinds[inds[1]],
     }
 
 
@@ -255,20 +288,21 @@ def find_lowest_similarity(base_videos, new_videos, output, prefix, most_similar
     )
 
 
-def build_side_by_side(base_video, new_video, output_dir, filename):
+def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, filename):
     before_vid = pathlib.Path(output_dir, "before.mp4")
     after_vid = pathlib.Path(output_dir, "after.mp4")
+    before_cut_vid = pathlib.Path(output_dir, "before-cut.mp4")
+    after_cut_vid = pathlib.Path(output_dir, "after-cut.mp4")
     before_rs_vid = pathlib.Path(output_dir, "before-rs.mp4")
     after_rs_vid = pathlib.Path(output_dir, "after-rs.mp4")
 
-    if before_vid.exists():
-        before_vid.unlink()
-    if after_vid.exists():
-        after_vid.unlink()
-    if before_rs_vid.exists():
-        before_rs_vid.unlink()
-    if after_rs_vid.exists():
-        after_rs_vid.unlink()
+    for apath in (
+        before_vid, after_vid,
+        before_cut_vid, after_cut_vid,
+        before_rs_vid, after_rs_vid
+    ):
+        if apath.exists():
+            apath.unlink()
 
     overlay_text = "fps=fps=60,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:" + \
               "timecode=00\\\\:00\\\\:00\\\\:00:rate=60*1000/1001:fontcolor=white:x=(w-tw)/2:" + \
@@ -280,18 +314,34 @@ def build_side_by_side(base_video, new_video, output_dir, filename):
         "-preset", "veryfast",
     ]
 
-    # Resample
+    # Cut the videos
     subprocess.check_output(
         [
             "ffmpeg",
             "-i", str(base_video),
+            "-vf", "select=gt(n\\,%s)" % base_ind,
+        ] + [str(before_cut_vid)]
+    )
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i", str(new_video),
+            "-vf", "select=gt(n\\,%s)" % new_ind,
+        ] + [str(after_cut_vid)]
+    )
+
+    # Resample
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i", str(before_cut_vid),
             "-filter:v", "fps=fps=60",
         ] + [str(before_rs_vid)]
     )
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(new_video),
+            "-i", str(after_cut_vid),
             "-filter:v", "fps=fps=60",
         ] + [str(after_rs_vid)]
     )
@@ -328,6 +378,14 @@ if __name__=="__main__":
 
     if shutil.which("ffmpeg") is None:
         raise Exception("Cannot find ffmpeg in path! Please install it before continuing.")
+    if "vismet-" in args.platform:
+        args.platform = args.platform.replace("vismet-", "")
+        if not args.test_name.endswith("-e10s"):
+            args.test_name += "-e10s"
+        print(
+            "Vismet tasks do not contain browsertime video recordings." +
+            "We'll assume you meant this platform: %s" % args.platform
+        )
 
     # Parse the given output argument
     filename = "side-by-side.mp4"
@@ -443,32 +501,54 @@ if __name__=="__main__":
     base_videos = find_videos(base_paths[0][0])
     new_videos = find_videos(new_paths[0][0])
 
+    run_cold = args.cold
+    run_warm = args.warm
+    if not args.cold and not args.warm:
+        run_cold = True
+        run_warm = True
+
     # Find the worst video pairing for cold and warm
     print("Starting comparisons, this may take a few minutes")
-    print("Running comparison for cold pageloads...")
-    cold_pairing = find_lowest_similarity(
-        base_videos["cold"],
-        new_videos["cold"],
-        str(output),
-        "cold_",
-        most_similar=args.most_similar
-    )
-
-    gc.collect()
-    print("Running comparison for warm pageloads...")
-    warm_pairing = find_lowest_similarity(
-        base_videos["warm"],
-        new_videos["warm"],
-        str(output),
-        "warm_",
-        most_similar=args.most_similar
-    )
+    if run_cold:
+        print("Running comparison for cold pageloads...")
+        cold_pairing = find_lowest_similarity(
+            base_videos["cold"],
+            new_videos["cold"],
+            str(output),
+            "cold_",
+            most_similar=args.most_similar
+        )
+    if run_warm:
+        gc.collect()
+        print("Running comparison for warm pageloads...")
+        warm_pairing = find_lowest_similarity(
+            base_videos["warm"],
+            new_videos["warm"],
+            str(output),
+            "warm_",
+            most_similar=args.most_similar
+        )
 
     # Build up the side-by-side comparisons now
-    output_name = str(pathlib.Path(output, "cold-" + filename))
-    build_side_by_side(cold_pairing["oldvid"], cold_pairing["newvid"], output, "cold-" + filename)
-    print("Successfully built a side-by-side cold comparison: %s" % output_name)
-
-    output_name = str(pathlib.Path(output, "warm-" + filename))
-    build_side_by_side(warm_pairing["oldvid"], warm_pairing["newvid"], output, "warm-" + filename)
-    print("Successfully built a side-by-side warm comparison: %s" % output_name)
+    if run_cold:
+        output_name = str(pathlib.Path(output, "cold-" + filename))
+        build_side_by_side(
+            cold_pairing["oldvid"],
+            cold_pairing["newvid"],
+            cold_pairing["oldvid_ind"],
+            cold_pairing["newvid_ind"],
+            output,
+            "cold-" + filename
+        )
+        print("Successfully built a side-by-side cold comparison: %s" % output_name)
+    if run_warm:
+        output_name = str(pathlib.Path(output, "warm-" + filename))
+        build_side_by_side(
+            warm_pairing["oldvid"],
+            warm_pairing["newvid"],
+            warm_pairing["oldvid_ind"],
+            warm_pairing["newvid_ind"],
+            output,
+            "warm-" + filename
+        )
+        print("Successfully built a side-by-side warm comparison: %s" % output_name)
