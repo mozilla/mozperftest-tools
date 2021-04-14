@@ -21,8 +21,6 @@ def summary_parser():
     )
     parser.add_argument("data", metavar="CSV_DATA", type=str,
                         help="The data to summarize.")
-    parser.add_argument("--compare-browsers", action="store_true", default=False,
-                        help="Provide a comparison between the browsers found.")
     parser.add_argument("--timespan", type=int, default=24,
                         help="Minimum time between each data point in hours.")
     parser.add_argument("--platforms", nargs="*", default=[],
