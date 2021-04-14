@@ -9,7 +9,6 @@ import pathlib
 
 import matplotlib.dates as md
 from matplotlib import pyplot as plt
-from scipy.stats.mstats import gmean
 
 
 def summary_parser():
@@ -137,6 +136,11 @@ def organize_data(data, platforms):
     return org_data
 
 
+def geo_mean(iterable):
+    a = np.array(iterable)
+    return a.prod()**(1.0/len(a))
+
+
 def temporal_aggregation(times, timespan=24):
     """Aggregates times formatted like `YYYY-mm-dd HH:MM`.
 
@@ -192,7 +196,7 @@ def summarize(data, platforms, timespan):
                                 vals.setdefault(test, []).extend(info["values"][time])
 
                         vals = [np.mean(v) for _, v in vals.items()]
-                        summarized_vals.append((times[-1], gmean(np.asarray(vals))))
+                        summarized_vals.append((times[-1], geo_mean(np.asarray(vals))))
 
                     summary.setdefault(
                         platform, {}
