@@ -23,6 +23,8 @@ def summary_parser():
                         help="The data to summarize.")
     parser.add_argument("--timespan", type=int, default=24,
                         help="Minimum time between each data point in hours.")
+    parser.add_argument("--moving-average-window", type=int, default=7,
+                        help="Number of points to use for the moving average.")
     parser.add_argument("--platforms", nargs="*", default=[],
                         help="Platforms to summarize. Default is all platforms.")
     parser.add_argument("--output", type=str, default=os.getcwd(),
@@ -164,7 +166,7 @@ def temporal_aggregation(times, timespan=24):
     return aggr_times[::-1]
 
 
-def summarize(data, platforms, timespan):
+def summarize(data, platforms, timespan, moving_average_window):
     org_data = organize_data(data, platforms)
 
     summary = {}
@@ -196,6 +198,15 @@ def summarize(data, platforms, timespan):
                         vals = [np.mean(v) for _, v in vals.items()]
                         summarized_vals.append((times[-1], geo_mean(np.asarray(vals))))
 
+                    ma_vals = []
+                    window = []
+                    for time, val in summarized_vals:
+                        if len(window) < moving_average_window:
+                            window.append(val)
+                        if len(window) == moving_average_window:
+                            ma_vals.append((time, np.mean(window)))
+                            window = window[1:]
+
                     summary.setdefault(
                         platform, {}
                     ).setdefault(
@@ -204,12 +215,139 @@ def summarize(data, platforms, timespan):
                         variant, {}
                     )[pl_type] = {
                         "values": summarized_vals,
+                        "moving_average": ma_vals,
                     }
 
     return summary
 
 
-def view(summary):
+def text_summary(summary, width=20, plat_width=40):
+    """Outputs the two newest points of the summary as a table.
+    
+    Returns the results as a list that could be saved to a CSV file.
+
+    Ex:
+
+    Platform          | App       | Variant            | Type   | 04/12/2021 | 04/13/2021 
+    -------------------------------------------------------------------------------------
+    linux64-shippable | firefox   | e10s               | cold   | 1900       | 1850
+                      |           |                    | warm   | 800        | 750
+                      |           -------------------------------------------------------
+                      |           | webrender          | cold   |            |
+                      |           |                    | warm   |            |
+                      |           -------------------------------------------------------
+                      |           | fission            | cold   |
+                      |           |                    | warm   |
+                      |           ------------------------------------------
+                      |           | fission-webrender  | cold   |
+                      |           |                    | warm   |
+                      ------------------------------------------------------
+                      | chrome    |                    |        |
+                      ------------------------------------------------------
+                      | chromium  |                    |        |
+    ------------------------------------------------------------------------
+    """
+
+    csv_lines = []
+    lines = []
+
+    # Get the two newest data points, for tests without data at those points
+    # we'll take the two newest data points they have regardless of date.
+    all_times = []
+    for platform, apps in summary.items():
+        for app, variants in apps.items():
+            for variant, pl_types in variants.items():
+                for pl_type, data in pl_types.items():
+                    all_times.append(data["moving_average"][-1][0])
+    sorted_times = sorted(list(set(all_times)))
+
+    newest_point = sorted_times[-1]
+    previous_point = sorted_times[-2]
+
+    format_line = "{:<{plat_width}}| {:<{width}}| {:<{width}}| {:<10}| {:<{width}}| {:<{width}}"
+    header_line = format_line.format(
+        "Platform", "Application", "Variant", "Type", previous_point, newest_point,
+        width=width, plat_width=plat_width
+    )
+    table_len = len(header_line)
+    lines.append(header_line)
+    lines.append("-" * table_len)
+
+    csv_lines.append(["Platform", "Application", "Variant", "Type", previous_point, newest_point])
+
+    platform_output = False
+    app_output = False
+    variant_output = False
+
+    for platform, apps in summary.items():
+
+        if platform_output:
+            lines.append("-" * table_len)
+        if len(platform) >= plat_width:
+            platform = platform[:plat_width-1]
+
+        platform_output = False
+        app_output = False
+        variant_output = False
+        for app, variants in apps.items():
+
+            if app_output:
+                spacer = width * 2
+                lines.append(" " * spacer + "-" * (table_len - spacer))
+
+            app_output = False
+            variant_output = False
+            for variant, pl_types in variants.items():
+                if app in ("chrome", "chromium"):
+                    variant = ""
+
+                if variant_output:
+                    spacer = width * 3
+                    lines.append(" " * spacer + "-" * (table_len - spacer))
+
+                variant_output = False
+                for pl_type, data in pl_types.items():
+                    platform_str = platform
+                    app_str = app
+                    variant_str = variant
+
+                    if platform_output:
+                        platform_str = ""
+                    if variant_output:
+                        variant_str = ""
+                    if app_output:
+                        app_str = ""
+
+                    prev = np.round(data["moving_average"][-2][1], 2)
+                    cur = np.round(data["moving_average"][-1][1], 2)
+                    lines.append(
+                        format_line.format(
+                            platform_str,
+                            app_str,
+                            variant_str,
+                            pl_type,
+                            prev,
+                            str(cur) + f" ({np.round(cur/prev,4)})",
+                            width=width,
+                            plat_width=plat_width
+                        )
+                    )
+                    csv_lines.append([platform, app, variant, pl_type, prev, cur])
+
+                    if not variant_output:
+                        variant_output = True
+                    if not app_output:
+                        app_output = True
+                    if not platform_output:
+                        platform_output = True
+
+    for line in lines:
+        print(line)
+
+    return csv_lines
+
+
+def visual_summary(summary):
 
     for platform, apps in summary.items():
 
@@ -224,7 +362,7 @@ def view(summary):
 
                 plt.figure()
                 figc = 1
-                for pl_type, vals in pl_types.items():
+                for pl_type, data in pl_types.items():
                     plt.subplot(1,2,figc)
                     figc += 1
 
@@ -233,11 +371,18 @@ def view(summary):
 
                     times = [
                         datetime.datetime.strptime(x, "%Y-%m-%d %H:%M")
-                        for x, y in vals["values"]
+                        for x, y in data["values"]
                     ]
-                    vals = [y for x, y in vals["values"]]
+                    vals = [y for x, y in data["values"]]
+
+                    ma_times = [
+                        datetime.datetime.strptime(x, "%Y-%m-%d %H:%M")
+                        for x, y in data["moving_average"]
+                    ]
+                    ma_vals = [y for x, y in data["moving_average"]]
 
                     md_times = md.date2num(times)
+                    md_ma_times = md.date2num(ma_times)
 
                     ax = plt.gca()
                     xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
@@ -245,6 +390,7 @@ def view(summary):
                     plt.xticks(rotation=25)
 
                     plt.plot(md_times, vals)
+                    plt.plot(md_ma_times, ma_vals)
 
                 plt.show()
 
@@ -275,11 +421,22 @@ def main():
     # Process the data and visualize the results (after saving)
     data = open_csv_data(data_path)
 
-    results = summarize(data, args.platforms, args.timespan)
+    results = summarize(data, args.platforms, args.timespan, args.moving_average_window)
     with pathlib.Path(output_folder, output_file).open("w") as f:
         json.dump(results, f)
 
-    view(results)
+    csv_lines = text_summary(results)
+
+    csv_file = pathlib.Path(output_folder, "newest-points.csv")
+    if csv_file.exists():
+        print(f"Deleting existing CSV summary file at: {csv_file}")
+        csv_file.unlink()
+    with csv_file.open("w") as f:
+        writer = csv.writer(f, delimiter=",")
+        for line in csv_lines:
+            writer.writerow(line)
+
+    visual_summary(results)
 
 
 if __name__ == "__main__":
