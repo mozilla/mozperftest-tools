@@ -193,6 +193,8 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
 
                     maxi = np.argmax(histo)
                     if not orange_pixind:
+                        if maxi > 130:
+                            continue
                         orange_pixind = maxi
                     elif maxi == orange_pixind:
                         orange_frameind = frame_count
