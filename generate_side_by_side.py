@@ -223,6 +223,8 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
         old_orange_frameinds.append(old_orange_frameind)
 
         histo, _, _ = plt.hist(datao.flatten(), bins=255)
+        plt.clf()
+        gc.collect()
 
         for j in range(total_vids):
             write_same_line("Comparing old video %s to new video %s" % (i+1, j+1))
@@ -233,12 +235,14 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
                 new_orange_frameinds.append(new_orange_frameind)
 
                 histn, _, _ = plt.hist(datan.flatten(), bins=255)
+                plt.clf()
+                gc.collect()
 
                 nhists.append(histn)
             else:
                 histn = nhists[j]
 
-            rho, _ = spearmanr(histn, histo)
+            rho, _ = spearmanr(histo, histn)
 
             xcorr[i, j] = rho
 
