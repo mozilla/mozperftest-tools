@@ -371,8 +371,8 @@ def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, fil
             "ffmpeg",
             "-i", str(before_vid),
             "-i", str(after_vid),
-            "-filter_complex", "hstack",
-        ] + [str(pathlib.Path(output_dir, filename))]
+            "-filter_complex", "[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]",
+        ] + common_options + [str(pathlib.Path(output_dir, filename))]
     )
 
 
