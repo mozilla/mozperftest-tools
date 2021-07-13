@@ -215,12 +215,18 @@ def summarize(data, platforms, timespan, moving_average_window):
 
                     ma_vals = []
                     window = []
-                    for time, val in summarized_vals:
-                        if len(window) < moving_average_window:
-                            window.append(val)
-                        if len(window) == moving_average_window:
-                            ma_vals.append((time, np.mean(window)))
-                            window = window[1:]
+                    if len(summarized_vals) > moving_average_window:
+                        for time, val in summarized_vals:
+                            if len(window) < moving_average_window:
+                                window.append(val)
+                            if len(window) == moving_average_window:
+                                ma_vals.append((time, np.mean(window)))
+                                window = window[1:]
+                    else:
+                        ma_vals = summarized_vals
+
+                    if len(ma_vals) == 0:
+                        continue
 
                     summary.setdefault(platform, {}).setdefault(app, {}).setdefault(
                         variant, {}
@@ -269,11 +275,14 @@ def text_summary(summary, width=20, plat_width=40):
         for app, variants in apps.items():
             for variant, pl_types in variants.items():
                 for pl_type, data in pl_types.items():
+                    # if len(data.get("moving_average", [])) > 0:
                     all_times.append(data["moving_average"][-1][0])
     sorted_times = sorted(list(set(all_times)))
 
     newest_point = sorted_times[-1]
-    previous_point = sorted_times[-2]
+    previous_point = newest_point
+    if len(sorted_times) > 1:
+        previous_point = sorted_times[-2]
 
     format_line = (
         "{:<{plat_width}}| {:<{width}}| {:<{width}}| {:<10}| {:<{width}}| {:<{width}}"
@@ -339,8 +348,11 @@ def text_summary(summary, width=20, plat_width=40):
                     if app_output:
                         app_str = ""
 
-                    prev = np.round(data["moving_average"][-2][1], 2)
                     cur = np.round(data["moving_average"][-1][1], 2)
+                    prev = cur
+                    if len(data["moving_average"]) > 1:
+                        prev = np.round(data["moving_average"][-2][1], 2)
+                        
                     lines.append(
                         format_line.format(
                             platform_str,
