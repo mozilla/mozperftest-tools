@@ -2,6 +2,16 @@
 
 This repository is a collection of various tools that are useful for the things we do in Performance and Performance Testing. You can find the most interesting ones documented below.
 
+## Setup
+
+For convenience, you can use poetry to manage dependencies and virtual environments.
+
+When running for the first time, you will need to [install poetry](https://python-poetry.org/docs/#installation) and then run `poetry install` to create the virtual environment and install dependencies.
+
+Then, you can simply run `poetry run python` followed by the path to the script you'd like to run. For example, `poetry run python generate_test_report.py --tests browsertime`.
+
+You can update the dependencies by running `poetry update` and can add dependencies using `poetry add`. See the [poetry documentation](https://python-poetry.org/docs/) for more details.
+
 ## Generating a Test Report
 
 The code in `generate_test_report.py` can be used to determine where all tests are running, what tests are running on which platform or what platforms are running which tests. It is produced from a given `full-task-graph.json` artifact.
