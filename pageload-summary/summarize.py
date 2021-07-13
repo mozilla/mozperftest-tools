@@ -19,18 +19,35 @@ def summary_parser():
         "`--compare-browsers`. You must provide data in the CSV format that is returned from "
         "this query: https://sql.telemetry.mozilla.org/queries/79289"
     )
-    parser.add_argument("data", metavar="CSV_DATA", type=str,
-                        help="The data to summarize.")
-    parser.add_argument("--timespan", type=int, default=24,
-                        help="Minimum time between each data point in hours.")
-    parser.add_argument("--moving-average-window", type=int, default=7,
-                        help="Number of points to use for the moving average.")
-    parser.add_argument("--platforms", nargs="*", default=[],
-                        help="Platforms to summarize. Default is all platforms.")
-    parser.add_argument("--output", type=str, default=os.getcwd(),
-                        help="This is where the data will be saved in JSON format. If the "
-                        "path has a `.json` suffix then we'll use the part immediately "
-                        "before it as the file name.")
+    parser.add_argument(
+        "data", metavar="CSV_DATA", type=str, help="The data to summarize."
+    )
+    parser.add_argument(
+        "--timespan",
+        type=int,
+        default=24,
+        help="Minimum time between each data point in hours.",
+    )
+    parser.add_argument(
+        "--moving-average-window",
+        type=int,
+        default=7,
+        help="Number of points to use for the moving average.",
+    )
+    parser.add_argument(
+        "--platforms",
+        nargs="*",
+        default=[],
+        help="Platforms to summarize. Default is all platforms.",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=os.getcwd(),
+        help="This is where the data will be saved in JSON format. If the "
+        "path has a `.json` suffix then we'll use the part immediately "
+        "before it as the file name.",
+    )
     return parser
 
 
@@ -104,16 +121,12 @@ def organize_data(data, platforms):
             variants = variants.replace("e10s", "")
 
         mod_test_name = f"{test}-{app}" + "-".join(sorted(extras))
-        test_data = org_data.setdefault(
-            platform, {}
-        ).setdefault(
-            app, {}
-        ).setdefault(
-            variants, {}
-        ).setdefault(
-            pl_type, {}
-        ).setdefault(
-            mod_test_name, {}
+        test_data = (
+            org_data.setdefault(platform, {})
+            .setdefault(app, {})
+            .setdefault(variants, {})
+            .setdefault(pl_type, {})
+            .setdefault(mod_test_name, {})
         )
 
         # Make sure we're never mixing data
@@ -121,10 +134,10 @@ def organize_data(data, platforms):
             assert test_data["extra_options"] == set(list(extras))
         else:
             test_data["extra_options"] = set(list(extras))
-        
-        test_data.setdefault("values", {}).setdefault(
-            entry[time_ind], []
-        ).append(float(entry[val_ind]))
+
+        test_data.setdefault("values", {}).setdefault(entry[time_ind], []).append(
+            float(entry[val_ind])
+        )
 
     if not org_data:
         possible_platforms = set([entry[platform_ind] for entry in data])
@@ -138,7 +151,7 @@ def organize_data(data, platforms):
 
 def geo_mean(iterable):
     a = np.array(iterable)
-    return a.prod()**(1.0/len(a))
+    return a.prod() ** (1.0 / len(a))
 
 
 def temporal_aggregation(times, timespan=24):
@@ -182,7 +195,9 @@ def summarize(data, platforms, timespan, moving_average_window):
                     all_push_times = []
                     for _, info in tests.items():
                         all_push_times.extend(list(info["values"].keys()))
-                    all_push_times = temporal_aggregation(list(set(all_push_times)), timespan)
+                    all_push_times = temporal_aggregation(
+                        list(set(all_push_times)), timespan
+                    )
 
                     # Get a summary value for each push time
                     summarized_vals = []
@@ -207,11 +222,7 @@ def summarize(data, platforms, timespan, moving_average_window):
                             ma_vals.append((time, np.mean(window)))
                             window = window[1:]
 
-                    summary.setdefault(
-                        platform, {}
-                    ).setdefault(
-                        app, {}
-                    ).setdefault(
+                    summary.setdefault(platform, {}).setdefault(app, {}).setdefault(
                         variant, {}
                     )[pl_type] = {
                         "values": summarized_vals,
@@ -223,12 +234,12 @@ def summarize(data, platforms, timespan, moving_average_window):
 
 def text_summary(summary, width=20, plat_width=40):
     """Outputs the two newest points of the summary as a table.
-    
+
     Returns the results as a list that could be saved to a CSV file.
 
     Ex:
 
-    Platform          | App       | Variant            | Type   | 04/12/2021 | 04/13/2021 
+    Platform          | App       | Variant            | Type   | 04/12/2021 | 04/13/2021
     -------------------------------------------------------------------------------------
     linux64-shippable | firefox   | e10s               | cold   | 1900       | 1850
                       |           |                    | warm   | 800        | 750
@@ -264,16 +275,26 @@ def text_summary(summary, width=20, plat_width=40):
     newest_point = sorted_times[-1]
     previous_point = sorted_times[-2]
 
-    format_line = "{:<{plat_width}}| {:<{width}}| {:<{width}}| {:<10}| {:<{width}}| {:<{width}}"
+    format_line = (
+        "{:<{plat_width}}| {:<{width}}| {:<{width}}| {:<10}| {:<{width}}| {:<{width}}"
+    )
     header_line = format_line.format(
-        "Platform", "Application", "Variant", "Type", previous_point, newest_point,
-        width=width, plat_width=plat_width
+        "Platform",
+        "Application",
+        "Variant",
+        "Type",
+        previous_point,
+        newest_point,
+        width=width,
+        plat_width=plat_width,
     )
     table_len = len(header_line)
     lines.append(header_line)
     lines.append("-" * table_len)
 
-    csv_lines.append(["Platform", "Application", "Variant", "Type", previous_point, newest_point])
+    csv_lines.append(
+        ["Platform", "Application", "Variant", "Type", previous_point, newest_point]
+    )
 
     platform_output = False
     app_output = False
@@ -284,7 +305,7 @@ def text_summary(summary, width=20, plat_width=40):
         if platform_output:
             lines.append("-" * table_len)
         if len(platform) >= plat_width:
-            platform = platform[:plat_width-1]
+            platform = platform[: plat_width - 1]
 
         platform_output = False
         app_output = False
@@ -329,7 +350,7 @@ def text_summary(summary, width=20, plat_width=40):
                             prev,
                             str(cur) + f" ({np.round(cur/prev,4)})",
                             width=width,
-                            plat_width=plat_width
+                            plat_width=plat_width,
                         )
                     )
                     csv_lines.append([platform, app, variant, pl_type, prev, cur])
@@ -363,7 +384,7 @@ def visual_summary(summary):
                 plt.figure()
                 figc = 1
                 for pl_type, data in pl_types.items():
-                    plt.subplot(1,2,figc)
+                    plt.subplot(1, 2, figc)
                     figc += 1
 
                     variant = variant if variant != "None" else "e10s"
@@ -385,7 +406,7 @@ def visual_summary(summary):
                     md_ma_times = md.date2num(ma_times)
 
                     ax = plt.gca()
-                    xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
+                    xfmt = md.DateFormatter("%Y-%m-%d %H:%M:%S")
                     ax.xaxis.set_major_formatter(xfmt)
                     plt.xticks(rotation=25)
 
@@ -393,7 +414,6 @@ def visual_summary(summary):
                     plt.plot(md_ma_times, ma_vals)
 
                 plt.show()
-
 
 
 def main():

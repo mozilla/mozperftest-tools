@@ -29,9 +29,10 @@ from artifact_downloader import artifact_downloader
 from task_processor import get_task_data_paths
 
 
-TASK_IDS = \
-    "https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/" + \
-    "gecko.v2.{}.revision.{}.taskgraph"
+TASK_IDS = (
+    "https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/"
+    + "gecko.v2.{}.revision.{}.taskgraph"
+)
 
 TASK_INFO = "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/{}"
 
@@ -44,40 +45,104 @@ def side_by_side_parser():
         "between two revisions, then use `browsertime-tp6-firefox-linkedin-e10s` as the suite name "
         "and `test-linux64-shippable-qr/opt` as the platform."
     )
-    parser.add_argument("--base-revision", type=str, required=True,
-                        help="The base revision to compare a new revision to.")
-    parser.add_argument("--base-branch", type=str, default="autoland",
-                        help="Branch to search for the base revision.")
-    parser.add_argument("--new-revision", type=str, required=True,
-                        help="The base revision to compare a new revision to.")
-    parser.add_argument("--new-branch", type=str, default="autoland",
-                        help="Branch to search for the new revision.")
-    parser.add_argument("--test-name", "--base-test-name", type=str, required=True, dest="test_name",
-                        help="The name of the test task to get videos from.")
-    parser.add_argument("--new-test-name", type=str, default=None,
-                        help="The name of the test task to get videos from in the new revision.")
-    parser.add_argument("--platform", "--base-platform", type=str, required=True, dest="platform",
-                        help="Platform to return results for.")
-    parser.add_argument("--new-platform", type=str, default=None,
-                        help="Platform to return results for in the new revision.")
-    parser.add_argument("--overwrite", action="store_true", default=False,
-                        help="If set, the downloaded task group data will be deleted before " +
-                        "it gets re-downloaded.")
-    parser.add_argument("--cold", action="store_true", default=False,
-                        help="If set, we'll only look at cold pageload tests.")
-    parser.add_argument("--warm", action="store_true", default=False,
-                        help="If set, we'll only look at warm pageload tests.")
-    parser.add_argument("--most-similar", action="store_true", default=False,
-                        help="If set, we'll search for a video pairing that is the most similar.")
-    parser.add_argument("--search-crons", action="store_true", default=False,
-                        help="If set, we will search for the tasks within the cron jobs as well. ")
-    parser.add_argument("--skip-download", action="store_true", default=False,
-                        help="If set, we won't try to download artifacts again and we'll " +
-                        "try using what already exists in the output folder.")
-    parser.add_argument("--output", type=str, default=os.getcwd(),
-                        help="This is where the data will be saved. Defaults to CWD. " +
-                        "You can include a name for the file here, otherwise it will " +
-                        "default to side-by-side.mp4.")
+    parser.add_argument(
+        "--base-revision",
+        type=str,
+        required=True,
+        help="The base revision to compare a new revision to.",
+    )
+    parser.add_argument(
+        "--base-branch",
+        type=str,
+        default="autoland",
+        help="Branch to search for the base revision.",
+    )
+    parser.add_argument(
+        "--new-revision",
+        type=str,
+        required=True,
+        help="The base revision to compare a new revision to.",
+    )
+    parser.add_argument(
+        "--new-branch",
+        type=str,
+        default="autoland",
+        help="Branch to search for the new revision.",
+    )
+    parser.add_argument(
+        "--test-name",
+        "--base-test-name",
+        type=str,
+        required=True,
+        dest="test_name",
+        help="The name of the test task to get videos from.",
+    )
+    parser.add_argument(
+        "--new-test-name",
+        type=str,
+        default=None,
+        help="The name of the test task to get videos from in the new revision.",
+    )
+    parser.add_argument(
+        "--platform",
+        "--base-platform",
+        type=str,
+        required=True,
+        dest="platform",
+        help="Platform to return results for.",
+    )
+    parser.add_argument(
+        "--new-platform",
+        type=str,
+        default=None,
+        help="Platform to return results for in the new revision.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        default=False,
+        help="If set, the downloaded task group data will be deleted before "
+        + "it gets re-downloaded.",
+    )
+    parser.add_argument(
+        "--cold",
+        action="store_true",
+        default=False,
+        help="If set, we'll only look at cold pageload tests.",
+    )
+    parser.add_argument(
+        "--warm",
+        action="store_true",
+        default=False,
+        help="If set, we'll only look at warm pageload tests.",
+    )
+    parser.add_argument(
+        "--most-similar",
+        action="store_true",
+        default=False,
+        help="If set, we'll search for a video pairing that is the most similar.",
+    )
+    parser.add_argument(
+        "--search-crons",
+        action="store_true",
+        default=False,
+        help="If set, we will search for the tasks within the cron jobs as well. ",
+    )
+    parser.add_argument(
+        "--skip-download",
+        action="store_true",
+        default=False,
+        help="If set, we won't try to download artifacts again and we'll "
+        + "try using what already exists in the output folder.",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=os.getcwd(),
+        help="This is where the data will be saved. Defaults to CWD. "
+        + "You can include a name for the file here, otherwise it will "
+        + "default to side-by-side.mp4.",
+    )
     return parser
 
 
@@ -154,7 +219,9 @@ def find_videos(artifact_dir):
     }
 
 
-def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_similar=False):
+def get_similarity(
+    old_videos_info, new_videos_info, output, prefix="", most_similar=False
+):
     """Calculates a similarity score for two groupings of videos.
 
     The technique works as follows:
@@ -229,7 +296,7 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
         gc.collect()
 
         for j in range(total_vids):
-            write_same_line("Comparing old video %s to new video %s" % (i+1, j+1))
+            write_same_line("Comparing old video %s to new video %s" % (i + 1, j + 1))
             if i == 0:
                 # Only calculate the histograms once; it takes time
                 datan, new_orange_frameind = _get_frames(new_videos[j])
@@ -279,18 +346,13 @@ def get_similarity(old_videos_info, new_videos_info, output, prefix="", most_sim
 def find_lowest_similarity(base_videos, new_videos, output, prefix, most_similar=False):
     def _open_data(file):
         return cv2.VideoCapture(str(file))
+
     return get_similarity(
-        [
-            {"data": _open_data(str(f)), "path": str(f)}
-            for f in base_videos
-        ],
-        [
-            {"data": _open_data(str(f)), "path": str(f)}
-            for f in new_videos
-        ],
+        [{"data": _open_data(str(f)), "path": str(f)} for f in base_videos],
+        [{"data": _open_data(str(f)), "path": str(f)} for f in new_videos],
         output,
         prefix,
-        most_similar=most_similar
+        most_similar=most_similar,
     )
 
 
@@ -303,94 +365,130 @@ def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, fil
     after_rs_vid = pathlib.Path(output_dir, "after-rs.mp4")
 
     for apath in (
-        before_vid, after_vid,
-        before_cut_vid, after_cut_vid,
-        before_rs_vid, after_rs_vid
+        before_vid,
+        after_vid,
+        before_cut_vid,
+        after_cut_vid,
+        before_rs_vid,
+        after_rs_vid,
     ):
         if apath.exists():
             apath.unlink()
 
-    overlay_text = "fps=fps=60,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:" + \
-              "timecode=00\\\\:00\\\\:00\\\\:00:rate=60*1000/1001:fontcolor=white:x=(w-tw)/2:" + \
-              "y=10:box=1:boxcolor=0x00000000@1[vid]"
+    overlay_text = (
+        "fps=fps=60,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:"
+        + "timecode=00\\\\:00\\\\:00\\\\:00:rate=60*1000/1001:fontcolor=white:x=(w-tw)/2:"
+        + "y=10:box=1:boxcolor=0x00000000@1[vid]"
+    )
     common_options = [
-        "-map", "[vid]",
-        "-c:v", "libx264",
-        "-crf", "18",
-        "-preset", "veryfast",
+        "-map",
+        "[vid]",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "18",
+        "-preset",
+        "veryfast",
     ]
 
     # Cut the videos
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(base_video),
-            "-vf", "select=gt(n\\,%s)" % base_ind,
-        ] + [str(before_cut_vid)]
+            "-i",
+            str(base_video),
+            "-vf",
+            "select=gt(n\\,%s)" % base_ind,
+        ]
+        + [str(before_cut_vid)]
     )
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(new_video),
-            "-vf", "select=gt(n\\,%s)" % new_ind,
-        ] + [str(after_cut_vid)]
+            "-i",
+            str(new_video),
+            "-vf",
+            "select=gt(n\\,%s)" % new_ind,
+        ]
+        + [str(after_cut_vid)]
     )
 
     # Resample
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(before_cut_vid),
-            "-filter:v", "fps=fps=60",
-        ] + [str(before_rs_vid)]
+            "-i",
+            str(before_cut_vid),
+            "-filter:v",
+            "fps=fps=60",
+        ]
+        + [str(before_rs_vid)]
     )
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(after_cut_vid),
-            "-filter:v", "fps=fps=60",
-        ] + [str(after_rs_vid)]
+            "-i",
+            str(after_cut_vid),
+            "-filter:v",
+            "fps=fps=60",
+        ]
+        + [str(after_rs_vid)]
     )
 
     # Generate the before and after videos
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(before_rs_vid),
-            "-filter_complex", overlay_text.format("BEFORE"),
-        ] + common_options + [str(before_vid)]
+            "-i",
+            str(before_rs_vid),
+            "-filter_complex",
+            overlay_text.format("BEFORE"),
+        ]
+        + common_options
+        + [str(before_vid)]
     )
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(after_rs_vid),
-            "-filter_complex", overlay_text.format("AFTER"),
-        ] + common_options + [str(after_vid)]
+            "-i",
+            str(after_rs_vid),
+            "-filter_complex",
+            overlay_text.format("AFTER"),
+        ]
+        + common_options
+        + [str(after_vid)]
     )
 
     subprocess.check_output(
         [
             "ffmpeg",
-            "-i", str(before_vid),
-            "-i", str(after_vid),
-            "-filter_complex", "[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]",
-        ] + common_options + [str(pathlib.Path(output_dir, filename))]
+            "-i",
+            str(before_vid),
+            "-i",
+            str(after_vid),
+            "-filter_complex",
+            "[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]",
+        ]
+        + common_options
+        + [str(pathlib.Path(output_dir, filename))]
     )
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     args = side_by_side_parser().parse_args()
     overwrite = args.overwrite
 
     if shutil.which("ffmpeg") is None:
-        raise Exception("Cannot find ffmpeg in path! Please install it before continuing.")
+        raise Exception(
+            "Cannot find ffmpeg in path! Please install it before continuing."
+        )
     if "vismet-" in args.platform:
         args.platform = args.platform.replace("vismet-", "")
         if not args.test_name.endswith("-e10s"):
             args.test_name += "-e10s"
         print(
-            "Vismet tasks do not contain browsertime video recordings." +
-            "We'll assume you meant this platform: %s" % args.platform
+            "Vismet tasks do not contain browsertime video recordings."
+            + "We'll assume you meant this platform: %s" % args.platform
         )
 
     # Parse the given output argument
@@ -417,14 +515,10 @@ if __name__=="__main__":
 
     # Get the task group IDs for the revisions
     base_revision_ids = find_task_group_id(
-        args.base_revision,
-        args.base_branch,
-        search_crons=args.search_crons
+        args.base_revision, args.base_branch, search_crons=args.search_crons
     )
     new_revision_ids = find_task_group_id(
-        args.new_revision,
-        args.new_branch,
-        search_crons=args.search_crons
+        args.new_revision, args.new_branch, search_crons=args.search_crons
     )
 
     base_task_dirs = [pathlib.Path(output, revid) for revid in base_revision_ids]
@@ -441,11 +535,11 @@ if __name__=="__main__":
             if found_paths:
                 break
             # Get the paths to the directory holding the artifacts
-            found_paths = list(get_task_data_paths(
-                rev_id,
-                str(output),
-                artifact="browsertime-results"
-            ).values())
+            found_paths = list(
+                get_task_data_paths(
+                    rev_id, str(output), artifact="browsertime-results"
+                ).values()
+            )
         return found_paths
 
     # Download the artifacts
@@ -462,7 +556,7 @@ if __name__=="__main__":
                 artifact_to_get=["browsertime-results"],
                 unzip_artifact=True,
                 download_failures=True,
-                ingest_continue=False
+                ingest_continue=False,
             )
             base_paths = _search_for_paths([base_revision_id])
 
@@ -478,7 +572,7 @@ if __name__=="__main__":
                 artifact_to_get=["browsertime-results"],
                 unzip_artifact=True,
                 download_failures=True,
-                ingest_continue=False
+                ingest_continue=False,
             )
             new_paths = _search_for_paths([new_revision_id])
     else:
@@ -486,22 +580,14 @@ if __name__=="__main__":
         new_paths = _search_for_paths(new_revision_ids)
 
     # Make sure we only downloaded one task
-    failure_msg = "Not enough or too many artifacts downloaded for %s, can't compare! " + \
-            "Found paths: %s \nTry using --search-crons if you are sure the task exists."
+    failure_msg = (
+        "Not enough or too many artifacts downloaded for %s, can't compare! "
+        + "Found paths: %s \nTry using --search-crons if you are sure the task exists."
+    )
     if not base_paths or len(base_paths) > 1:
-        raise Exception(
-            failure_msg % (
-                args.base_revision,
-                base_paths
-            )
-        )
+        raise Exception(failure_msg % (args.base_revision, base_paths))
     if not new_paths or len(new_paths) > 1:
-        raise Exception(
-            failure_msg % (
-                args.new_revision,
-                new_paths
-            )
-        )
+        raise Exception(failure_msg % (args.new_revision, new_paths))
 
     # Gather the videos and split them between warm and cold
     base_videos = find_videos(base_paths[0][0])
@@ -522,7 +608,7 @@ if __name__=="__main__":
             new_videos["cold"],
             str(output),
             "cold_",
-            most_similar=args.most_similar
+            most_similar=args.most_similar,
         )
     if run_warm:
         gc.collect()
@@ -532,7 +618,7 @@ if __name__=="__main__":
             new_videos["warm"],
             str(output),
             "warm_",
-            most_similar=args.most_similar
+            most_similar=args.most_similar,
         )
 
     # Build up the side-by-side comparisons now
@@ -544,7 +630,7 @@ if __name__=="__main__":
             cold_pairing["oldvid_ind"],
             cold_pairing["newvid_ind"],
             output,
-            "cold-" + filename
+            "cold-" + filename,
         )
         print("Successfully built a side-by-side cold comparison: %s" % output_name)
     if run_warm:
@@ -555,6 +641,6 @@ if __name__=="__main__":
             warm_pairing["oldvid_ind"],
             warm_pairing["newvid_ind"],
             output,
-            "warm-" + filename
+            "warm-" + filename,
         )
         print("Successfully built a side-by-side warm comparison: %s" % output_name)
