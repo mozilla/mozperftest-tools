@@ -238,7 +238,7 @@ def summarize(data, platforms, timespan, moving_average_window):
     return summary
 
 
-def text_summary(summary, width=20, plat_width=40):
+def text_summary(summary, width=20, plat_width=50):
     """Outputs the two newest points of the summary as a table.
 
     Returns the results as a list that could be saved to a CSV file.
@@ -352,7 +352,7 @@ def text_summary(summary, width=20, plat_width=40):
                     prev = cur
                     if len(data["moving_average"]) > 1:
                         prev = np.round(data["moving_average"][-2][1], 2)
-                        
+
                     lines.append(
                         format_line.format(
                             platform_str,
