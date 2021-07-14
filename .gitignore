@@ -1,0 +1,6 @@
+*.mp4
+*.csv
+*.txt
+*.json
+__pycache__
+poetry.lock
