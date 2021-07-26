@@ -424,6 +424,8 @@ def visual_summary(summary):
 
         for app, variants in sorted(apps.items(),reverse=1):
 
+            plt.figure()
+            plt.suptitle(platform + f" {app}")
             for variant, pl_types in sorted(variants.items(),reverse=1):
 
                 """
@@ -431,14 +433,13 @@ def visual_summary(summary):
                 can be modified to anything.
                 """
 
-                plt.figure()
                 figc = 1
                 for pl_type, data in pl_types.items():
                     plt.subplot(1, 2, figc)
                     figc += 1
 
                     variant = variant if variant != "None" else "e10s"
-                    plt.title(platform + f"\n{app}-{pl_type}-{variant}")
+                    plt.title(f"{pl_type}")
 
                     times = [
                         datetime.datetime.strptime(x, "%Y-%m-%d %H:%M")
@@ -460,10 +461,11 @@ def visual_summary(summary):
                     ax.xaxis.set_major_formatter(xfmt)
                     plt.xticks(rotation=25)
 
-                    plt.plot(md_times, vals)
-                    plt.plot(md_ma_times, ma_vals)
+                    plt.plot(md_times, vals, label=variant)
+                    plt.plot(md_ma_times, ma_vals, label=variant + " (avg)")
+                    plt.legend()
 
-                plt.show()
+            plt.show()
 
 
 def main():
