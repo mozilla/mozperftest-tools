@@ -57,6 +57,11 @@ def summary_parser():
         help="pattern (substring-match) for platforms to summarize. Default is all platforms.",
     )
     parser.add_argument(
+        "--start-date",
+        type=datetime.datetime.fromisoformat,
+        help="Date to start analysis.",
+    )
+    parser.add_argument(
         "--app",
         help="Apps to summarize (default is all).  Examples: firefox, chromium, chrome",
     )
@@ -89,7 +94,7 @@ def get_data_ind(data, fieldname):
     return None
 
 
-def organize_data(data, platforms, platform_pattern, by_site = False, app_only=None):
+def organize_data(data, platforms, platform_pattern, start_date, by_site = False, app_only=None):
     """Organizes the data into a format that is easier to handle."""
 
     platform_ind = get_data_ind(data, "platform")
@@ -106,6 +111,9 @@ def organize_data(data, platforms, platform_pattern, by_site = False, app_only=N
         if platforms and platform not in platforms:
             continue
         if platform_pattern and platform.find(platform_pattern) == -1:
+            continue
+        date = datetime.datetime.fromisoformat(entry[time_ind])
+        if start_date != None and date < start_date:
             continue
 
         test = entry[test_ind]
@@ -209,8 +217,8 @@ def temporal_aggregation(times, timespan=24):
     return aggr_times[::-1]
 
 
-def summarize(data, platforms, platform_pattern, timespan, moving_average_window, by_site, app_only):
-    org_data = organize_data(data, platforms, platform_pattern, by_site, app_only)
+def summarize(data, platforms, platform_pattern, timespan, moving_average_window, start_date, by_site, app_only):
+    org_data = organize_data(data, platforms, platform_pattern, start_date, by_site, app_only)
 
     summary = {}
 
@@ -483,7 +491,7 @@ def main():
     # Process the data and visualize the results (after saving)
     data = open_csv_data(data_path)
 
-    results = summarize(data, args.platforms, args.platform_pattern, args.timespan, args.moving_average_window, args.by_site, args.app)
+    results = summarize(data, args.platforms, args.platform_pattern, args.timespan, args.moving_average_window, args.start_date, args.by_site, args.app)
     with pathlib.Path(output_folder, output_file).open("w") as f:
         json.dump(results, f)
 
