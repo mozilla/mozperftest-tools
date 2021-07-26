@@ -47,6 +47,16 @@ def summary_parser():
         help="Show visualizations",
     )
     parser.add_argument(
+        "--save-plots",
+        action="store_true",
+        default=False,
+        help="Save visualizations",
+    )
+    parser.add_argument(
+        "--save-directory",
+        help="Directory to save visualizations",
+    )
+    parser.add_argument(
         "--platforms",
         nargs="*",
         default=[],
@@ -418,13 +428,13 @@ def text_summary(summary, width=20, plat_width=50):
     return csv_lines
 
 
-def visual_summary(summary):
+def visual_summary(summary, save=False, directory=None):
 
     for platform, apps in sorted(summary.items()):
 
         for app, variants in sorted(apps.items(),reverse=1):
 
-            plt.figure()
+            plt.figure(figsize=(10,10))
             plt.suptitle(platform + f" {app}")
             for variant, pl_types in sorted(variants.items(),reverse=1):
 
@@ -465,7 +475,17 @@ def visual_summary(summary):
                     plt.plot(md_ma_times, ma_vals, label=variant + " (avg)")
                     plt.legend()
 
-            plt.show()
+            if save:
+                if directory != None:
+                    if directory[-1] != '/':
+                        directory += '/'
+                    dest = directory + platform + ".png"
+                else:
+                    dest = platform + ".png"
+                plt.savefig(dest)
+                plt.close()
+            else:
+                plt.show()
 
 
 def main():
@@ -509,7 +529,7 @@ def main():
             writer.writerow(line)
 
     if args.visualize:
-        visual_summary(results)
+        visual_summary(results, args.save_plots, args.save_directory)
 
 
 if __name__ == "__main__":
