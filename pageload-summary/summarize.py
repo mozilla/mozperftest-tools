@@ -57,6 +57,28 @@ def summary_parser():
         help="Directory to save visualizations",
     )
     parser.add_argument(
+        "--by-site",
+        action="store_true",
+        default=False,
+        help="Output summary by site",
+    )
+    parser.add_argument(
+        "--visualize",
+        action="store_true",
+        default=False,
+        help="Show visualizations",
+    )
+    parser.add_argument(
+        "--save-plots",
+        action="store_true",
+        default=False,
+        help="Save visualizations",
+    )
+    parser.add_argument(
+        "--save-directory",
+        help="Directory to save visualizations",
+    )
+    parser.add_argument(
         "--platforms",
         nargs="*",
         default=[],
@@ -75,6 +97,7 @@ def summary_parser():
         "--end-date",
         type=datetime.datetime.fromisoformat,
         help="Date to end analysis (inclusive).",
+
     )
     parser.add_argument(
         "--app",
@@ -110,6 +133,7 @@ def get_data_ind(data, fieldname):
 
 
 def organize_data(data, platforms, platform_pattern, start_date, end_date, by_site = False, app_only=None):
+
     """Organizes the data into a format that is easier to handle."""
 
     platform_ind = get_data_ind(data, "platform")
@@ -127,6 +151,7 @@ def organize_data(data, platforms, platform_pattern, start_date, end_date, by_si
             continue
         if platform_pattern and platform.find(platform_pattern) == -1:
             continue
+
         date = datetime.datetime.fromisoformat(entry[time_ind])
         if start_date != None and date < start_date:
             continue
@@ -232,6 +257,7 @@ def temporal_aggregation(times, timespan=24):
             curr = [dt]
 
     return aggr_times[::-1]
+
 
 
 def summarize(data, platforms, platform_pattern, timespan, moving_average_window, start_date, end_date, by_site, app_only):
@@ -531,6 +557,7 @@ def main():
     data = open_csv_data(data_path)
 
     results = summarize(data, args.platforms, args.platform_pattern, args.timespan, args.moving_average_window, args.start_date, args.end_date, args.by_site, args.app)
+
     with pathlib.Path(output_folder, output_file).open("w") as f:
         json.dump(results, f)
 
