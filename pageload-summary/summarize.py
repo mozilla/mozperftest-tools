@@ -35,10 +35,45 @@ def summary_parser():
         help="Number of points to use for the moving average.",
     )
     parser.add_argument(
+        "--by-site",
+        action="store_true",
+        default=False,
+        help="Output summary by site",
+    )
+    parser.add_argument(
+        "--visualize",
+        action="store_true",
+        default=False,
+        help="Show visualizations",
+    )
+    parser.add_argument(
+        "--save-plots",
+        action="store_true",
+        default=False,
+        help="Save visualizations",
+    )
+    parser.add_argument(
+        "--save-directory",
+        help="Directory to save visualizations",
+    )
+    parser.add_argument(
         "--platforms",
         nargs="*",
         default=[],
         help="Platforms to summarize. Default is all platforms.",
+    )
+    parser.add_argument(
+        "--platform-pattern",
+        help="pattern (substring-match) for platforms to summarize. Default is all platforms.",
+    )
+    parser.add_argument(
+        "--start-date",
+        type=datetime.datetime.fromisoformat,
+        help="Date to start analysis.",
+    )
+    parser.add_argument(
+        "--app",
+        help="Apps to summarize (default is all).  Examples: firefox, chromium, chrome",
     )
     parser.add_argument(
         "--output",
@@ -69,7 +104,7 @@ def get_data_ind(data, fieldname):
     return None
 
 
-def organize_data(data, platforms):
+def organize_data(data, platforms, platform_pattern, start_date, by_site = False, app_only=None):
     """Organizes the data into a format that is easier to handle."""
 
     platform_ind = get_data_ind(data, "platform")
@@ -85,9 +120,16 @@ def organize_data(data, platforms):
         platform = entry[platform_ind]
         if platforms and platform not in platforms:
             continue
+        if platform_pattern and platform.find(platform_pattern) == -1:
+            continue
+        date = datetime.datetime.fromisoformat(entry[time_ind])
+        if start_date != None and date < start_date:
+            continue
 
         test = entry[test_ind]
         app = entry[app_ind]
+        if app_only != None and app_only != app:
+            continue
         extras = entry[extra_ind].split()
         tags = entry[tag_ind].split()
         variants = "e10s"
@@ -100,6 +142,10 @@ def organize_data(data, platforms):
 
         # Make sure we always ignore live site data
         if "live" in extras:
+            continue
+
+        # Make sure we always ignore profiler runs
+        if "gecko-profile" in extras:
             continue
 
         if "warm" in extras:
@@ -120,6 +166,8 @@ def organize_data(data, platforms):
         if variants != "e10s":
             variants = variants.replace("e10s", "")
 
+        if by_site:
+            platform += "-" + test
         mod_test_name = f"{test}-{app}" + "-".join(sorted(extras))
         test_data = (
             org_data.setdefault(platform, {})
@@ -179,8 +227,8 @@ def temporal_aggregation(times, timespan=24):
     return aggr_times[::-1]
 
 
-def summarize(data, platforms, timespan, moving_average_window):
-    org_data = organize_data(data, platforms)
+def summarize(data, platforms, platform_pattern, timespan, moving_average_window, start_date, by_site, app_only):
+    org_data = organize_data(data, platforms, platform_pattern, start_date, by_site, app_only)
 
     summary = {}
 
@@ -309,7 +357,7 @@ def text_summary(summary, width=20, plat_width=50):
     app_output = False
     variant_output = False
 
-    for platform, apps in summary.items():
+    for platform, apps in sorted(summary.items()):
 
         if platform_output:
             lines.append("-" * table_len)
@@ -319,7 +367,7 @@ def text_summary(summary, width=20, plat_width=50):
         platform_output = False
         app_output = False
         variant_output = False
-        for app, variants in apps.items():
+        for app, variants in sorted(apps.items(),reverse=1):
 
             if app_output:
                 spacer = width * 2
@@ -327,7 +375,7 @@ def text_summary(summary, width=20, plat_width=50):
 
             app_output = False
             variant_output = False
-            for variant, pl_types in variants.items():
+            for variant, pl_types in sorted(variants.items(),reverse=1):
                 if app in ("chrome", "chromium"):
                     variant = ""
 
@@ -380,27 +428,28 @@ def text_summary(summary, width=20, plat_width=50):
     return csv_lines
 
 
-def visual_summary(summary):
+def visual_summary(summary, save=False, directory=None):
 
-    for platform, apps in summary.items():
+    for platform, apps in sorted(summary.items()):
 
-        for app, variants in apps.items():
+        for app, variants in sorted(apps.items(),reverse=1):
 
-            for variant, pl_types in variants.items():
+            plt.figure(figsize=(10,10))
+            plt.suptitle(platform + f" {app}")
+            for variant, pl_types in sorted(variants.items(),reverse=1):
 
                 """
                 This is a simple visualization to show the metric. It
                 can be modified to anything.
                 """
 
-                plt.figure()
                 figc = 1
                 for pl_type, data in pl_types.items():
                     plt.subplot(1, 2, figc)
                     figc += 1
 
                     variant = variant if variant != "None" else "e10s"
-                    plt.title(platform + f"\n{app}-{pl_type}-{variant}")
+                    plt.title(f"{pl_type}")
 
                     times = [
                         datetime.datetime.strptime(x, "%Y-%m-%d %H:%M")
@@ -422,9 +471,20 @@ def visual_summary(summary):
                     ax.xaxis.set_major_formatter(xfmt)
                     plt.xticks(rotation=25)
 
-                    plt.plot(md_times, vals)
-                    plt.plot(md_ma_times, ma_vals)
+                    plt.plot(md_times, vals, label=variant)
+                    plt.plot(md_ma_times, ma_vals, label=variant + " (avg)")
+                    plt.legend()
 
+            if save:
+                if directory != None:
+                    if directory[-1] != '/':
+                        directory += '/'
+                    dest = directory + platform + ".png"
+                else:
+                    dest = platform + ".png"
+                plt.savefig(dest)
+                plt.close()
+            else:
                 plt.show()
 
 
@@ -453,7 +513,7 @@ def main():
     # Process the data and visualize the results (after saving)
     data = open_csv_data(data_path)
 
-    results = summarize(data, args.platforms, args.timespan, args.moving_average_window)
+    results = summarize(data, args.platforms, args.platform_pattern, args.timespan, args.moving_average_window, args.start_date, args.by_site, args.app)
     with pathlib.Path(output_folder, output_file).open("w") as f:
         json.dump(results, f)
 
@@ -468,7 +528,8 @@ def main():
         for line in csv_lines:
             writer.writerow(line)
 
-    visual_summary(results)
+    if args.visualize:
+        visual_summary(results, args.save_plots, args.save_directory)
 
 
 if __name__ == "__main__":
