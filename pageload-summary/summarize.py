@@ -57,28 +57,6 @@ def summary_parser():
         help="Directory to save visualizations",
     )
     parser.add_argument(
-        "--by-site",
-        action="store_true",
-        default=False,
-        help="Output summary by site",
-    )
-    parser.add_argument(
-        "--visualize",
-        action="store_true",
-        default=False,
-        help="Show visualizations",
-    )
-    parser.add_argument(
-        "--save-plots",
-        action="store_true",
-        default=False,
-        help="Save visualizations",
-    )
-    parser.add_argument(
-        "--save-directory",
-        help="Directory to save visualizations",
-    )
-    parser.add_argument(
         "--platforms",
         nargs="*",
         default=[],
