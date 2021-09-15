@@ -229,10 +229,15 @@ def temporal_aggregation(times, timespan=24):
         if len(curr) == 0:
             curr.append(dt)
         elif curr[0] - dt < diff:
+            # If we are within the `timespan` window, merge the point
             curr.append(dt)
         else:
             aggr_times.append([c.strftime("%Y-%m-%d %H:%M") for c in curr])
             curr = [dt]
+
+    if len(curr) >= 0 and len(aggr_times) == 0:
+        # When there's a single data point, there's nothing to aggregate temporally
+        aggr_times.append([c.strftime("%Y-%m-%d %H:%M") for c in curr])
 
     return aggr_times[::-1]
 
@@ -257,6 +262,14 @@ def summarize(data, platforms, platform_pattern, timespan, moving_average_window
                     all_push_times = temporal_aggregation(
                         list(set(all_push_times)), timespan
                     )
+
+                    if len(all_push_times) <= 1:
+                        print(
+                            "Skipping tests for the following combination "
+                            "as there is <=1 data point: %s" %
+                            "-".join([platform, app, variant, pl_type])
+                        )
+                        continue
 
                     # Get a summary value for each push time
                     summarized_vals = []
