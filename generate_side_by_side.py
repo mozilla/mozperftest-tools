@@ -26,6 +26,7 @@ except ImportError:
     from urllib2 import urlopen
 
 from artifact_downloader import artifact_downloader
+from artifact_downloader import get_perfherder_data
 from task_processor import get_task_data_paths
 
 
@@ -142,6 +143,18 @@ def side_by_side_parser():
         help="This is where the data will be saved. Defaults to CWD. "
         + "You can include a name for the file here, otherwise it will "
         + "default to side-by-side.mp4.",
+    )
+    parser.add_argument(
+        "--metric",
+        type=str,
+        default="speedindex",
+        help="Metric to use for side-by-side comparison.",
+    )
+    parser.add_argument(
+        "--vismetPath",
+        type=str,
+        default=False,
+        help="Paths to visualmetrics.py for step chart generation.",
     )
     return parser
 
@@ -355,6 +368,118 @@ def find_lowest_similarity(base_videos, new_videos, output, prefix, most_similar
         most_similar=most_similar,
     )
 
+def generate_step_chart(oldvid, newvid, vismetPath, prefix, metric):
+  oldvid_metrics = json.loads(
+    subprocess.check_output(
+      [
+          "python",
+          vismetPath,
+          "--orange",
+          "--perceptual",
+          "--contentful",
+          "--force",
+          "--renderignore",
+          "5",
+          "--json",
+          "--viewport",
+          "--video",
+          oldvid
+      ]
+    )
+  )
+
+  newvid_metrics = json.loads(
+    subprocess.check_output(
+      [
+          "python",
+          vismetPath,
+          "--orange",
+          "--perceptual",
+          "--contentful",
+          "--force",
+          "--renderignore",
+          "5",
+          "--json",
+          "--viewport",
+          "--video",
+          newvid
+      ]
+    )
+  )
+
+  if metric.lower() == "perceptualspeedinex":
+    progress="PerceptualSpeedIndexProgress"
+    metricName="PerceptualSpeedIndex"
+  elif metric.lower() == "contentfulspeedindex":
+    progress="ContentfulSpeedIndexProgress"
+    metricName="ContentfulSpeedIndex"
+  else:
+    progress="VisualProgress"
+    metricName="SpeedIndex"
+
+  x = []
+  y = []
+  for pt in oldvid_metrics[progress].split(","):
+    x.append(int(pt.split("=")[0]))
+    y.append(int(pt.split("=")[1]))
+  plt.step(x, y, label="Before (%d)"% oldvid_metrics[metricName])
+
+
+  x = []
+  y = []
+  for pt in newvid_metrics[progress].split(","):
+    x.append(int(pt.split("=")[0]))
+    y.append(int(pt.split("=")[1]))
+  plt.step(x, y, label="After (%d)"% newvid_metrics[metricName])
+
+  plt.legend(loc="lower right")
+  plt.title("%s %s"% (prefix.rstrip("_"), metricName))
+  plt.savefig("%s-%s-step.png"% (prefix.rstrip("_"), metric))
+  plt.clf()
+
+
+def find_closest_videos(base_videos, base_vismet, new_videos, new_vismet, output, prefix, metric):
+
+  for m in base_vismet:
+    if metric.lower() == m["name"].lower():
+      diff = [abs(m["replicates"][i]-m["value"]) for i in range(0,len(m["replicates"]))]
+      base_min_diff = min(diff)
+      base_min_idx  = diff.index(base_min_diff)
+      print(
+          "BASE: metric=%s prefix=%s mean=%d closest=%d index=%d"%
+          (metric, prefix, m["value"], m["replicates"][base_min_idx], base_min_idx)
+      )
+
+  for m in new_vismet:
+    if metric.lower() == m["name"].lower():
+      diff = [abs(m["replicates"][i]-m["value"]) for i in range(0,len(m["replicates"]))]
+      new_min_diff = min(diff)
+      new_min_idx  = diff.index(new_min_diff)
+      print(
+          "NEW: metric=%s prefix=%s mean=%d closest=%d index=%d"%
+          (metric, prefix, m["value"], m["replicates"][new_min_idx], new_min_idx)
+      )
+
+  oldvid = base_videos[base_min_idx]
+  oldvidnewpath = str(pathlib.Path(output, "%sold_video.mp4" % prefix))
+  shutil.copyfile(oldvid, oldvidnewpath)
+
+  newvid = new_videos[new_min_idx]
+  newvidnewpath = str(pathlib.Path(output, "%snew_video.mp4" % prefix))
+  shutil.copyfile(newvid, newvidnewpath)
+
+  if args.vismetPath:
+    generate_step_chart(oldvid, newvid, args.vismetPath, prefix, metric)
+
+  # The index values used here are for frame selection during video editing.
+  # We use 0 to select all frames.
+  return {
+      "oldvid": oldvidnewpath,
+      "oldvid_ind": 0,
+      "newvid": newvidnewpath,
+      "newvid_ind": 0
+  }
+
 
 def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, filename):
     before_vid = pathlib.Path(output_dir, "before.mp4")
@@ -542,6 +667,12 @@ if __name__ == "__main__":
             )
         return found_paths
 
+    # Fixup some naming issues when getting the vismet data
+    vismet_platform = args.platform.replace("test-", "test-vismet-")
+    test_no_e10s = args.test_name
+    if test_no_e10s.endswith('-e10s'):
+      test_no_e10s = test_no_e10s[:-5]
+
     # Download the artifacts
     if not args.skip_download:
         base_paths = []
@@ -559,6 +690,7 @@ if __name__ == "__main__":
                 ingest_continue=False,
             )
             base_paths = _search_for_paths([base_revision_id])
+            base_vismet = get_perfherder_data(base_revision_id, str(output), vismet_platform, test_no_e10s)
 
         new_paths = []
         for new_revision_id in new_revision_ids:
@@ -575,6 +707,7 @@ if __name__ == "__main__":
                 ingest_continue=False,
             )
             new_paths = _search_for_paths([new_revision_id])
+            new_vismet = get_perfherder_data(new_revision_id, str(output), vismet_platform, test_no_e10s)
     else:
         base_paths = _search_for_paths(base_revision_ids)
         new_paths = _search_for_paths(new_revision_ids)
@@ -603,23 +736,45 @@ if __name__ == "__main__":
     print("Starting comparisons, this may take a few minutes")
     if run_cold:
         print("Running comparison for cold pageloads...")
-        cold_pairing = find_lowest_similarity(
+        if args.metric == "similarity":
+            cold_pairing = find_lowest_similarity(
             base_videos["cold"],
             new_videos["cold"],
             str(output),
             "cold_",
             most_similar=args.most_similar,
-        )
+            )
+        else:
+            cold_pairing = find_closest_videos(
+                base_videos["cold"],
+                base_vismet["suites"][0]["subtests"],
+                new_videos["cold"],
+                new_vismet["suites"][0]["subtests"],
+                str(output),
+                "cold_",
+                args.metric,
+            )
     if run_warm:
         gc.collect()
         print("Running comparison for warm pageloads...")
-        warm_pairing = find_lowest_similarity(
+        if args.metric == "similarity":
+            warm_pairing = find_lowest_similarity(
             base_videos["warm"],
             new_videos["warm"],
             str(output),
             "warm_",
             most_similar=args.most_similar,
-        )
+            )
+        else:
+            warm_pairing = find_closest_videos(
+                base_videos["warm"],
+                base_vismet["suites"][1]["subtests"],
+                new_videos["warm"],
+                new_vismet["suites"][1]["subtests"],
+                str(output),
+                "warm_",
+                args.metric,
+            )
 
     # Build up the side-by-side comparisons now
     if run_cold:

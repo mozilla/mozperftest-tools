@@ -261,6 +261,33 @@ def move_file(abs_filepath, output_dir, count=0):
     shutil.copyfile(abs_filepath, os.path.join(tmp_path, fname))
     return tmp_path
 
+def get_perfherder_data(task_group_id, task_dir, platform, test_name):
+  tgi_path = os.path.join(task_dir, task_group_id, "task-group-information.json")
+  if os.path.exists(tgi_path):
+    with open(tgi_path, "r") as f:
+      tasks = json.load(f)
+  else:
+    raise Exception("Cannot find task group information at " + tgi_path)
+
+  TOTAL_TASKS = len(tasks)
+  for task in tasks:
+    if platform not in task["task"]["metadata"]["name"]:
+      continue
+    test = suite_name_from_task_name(task["task"]["metadata"]["name"])
+    if test==test_name:
+      log("Found %s with suite-name: %s"% (task["task"]["metadata"]["name"], test))
+      task_id = task["status"]["taskId"]
+
+      artifacts = get_task_artifacts(task_id)
+      for artifact in artifacts:
+        if "perfherder-data" in artifact["name"]:
+          url_data = TC_PREFIX + "v1/task/" + task_id + "/artifacts/" + artifact["name"]
+          return get_json(url_data)
+  
+  raise Exception("Could not find perfherder data")
+  return 0
+
+
 
 def artifact_downloader(
     task_group_id,
