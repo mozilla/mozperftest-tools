@@ -143,7 +143,7 @@ Run `python3 generate_test_report.py --help` for more options.
 
 ## Browsertime Side-by-Side Video Comparisons
 
-The `generate_side_by_side.py` script can be used to generate a side-by-side comparion of two browsertime videos. This can be useful for determining if a regression/improvement is legitimate or not. It uses the similarity metric which is calculated using video histograms. See below for more information. 
+The `generate_side_by_side.py` script can be used to generate a side-by-side comparion of two browsertime videos. This can be useful for determining if a regression/improvement is legitimate or not. It uses the similarity metric which is calculated using video histograms. See below for more information.
 
 ```
 $ python3 generate_side_by_side.py --help
@@ -164,7 +164,7 @@ optional arguments:
   --base-branch BASE_BRANCH
                         Branch to search for the base revision.
   --new-revision NEW_REVISION
-                        The base revision to compare a new revision to.
+                        The new revision to compare a base revision to.
   --new-branch NEW_BRANCH
                         Branch to search for the new revision.
   --test-name TEST_NAME
