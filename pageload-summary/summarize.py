@@ -77,7 +77,9 @@ def summary_parser():
         help="Date to end analysis (inclusive).",
     )
     parser.add_argument(
-        "--app",
+        "--apps",
+        nargs="*",
+        default=[],
         help="Apps to summarize (default is all).  Examples: firefox, chromium, chrome",
     )
     parser.add_argument(
@@ -110,13 +112,7 @@ def get_data_ind(data, fieldname):
 
 
 def organize_data(
-    data,
-    platforms,
-    platform_pattern,
-    start_date,
-    end_date,
-    by_site=False,
-    app_only=None,
+    data, platforms, platform_pattern, start_date, end_date, apps, by_site=False
 ):
 
     """Organizes the data into a format that is easier to handle."""
@@ -145,7 +141,7 @@ def organize_data(
 
         test = entry[test_ind]
         app = entry[app_ind]
-        if app_only != None and app_only != app:
+        if apps and app not in apps:
             continue
         extras = entry[extra_ind].split()
         tags = entry[tag_ind].split()
@@ -258,10 +254,10 @@ def summarize(
     start_date,
     end_date,
     by_site,
-    app_only,
+    apps,
 ):
     org_data = organize_data(
-        data, platforms, platform_pattern, start_date, end_date, by_site, app_only
+        data, platforms, platform_pattern, start_date, end_date, apps, by_site
     )
 
     summary = {}
@@ -574,7 +570,7 @@ def main():
         args.start_date,
         args.end_date,
         args.by_site,
-        args.app,
+        args.apps,
     )
 
     with pathlib.Path(output_folder, output_file).open("w") as f:
