@@ -75,10 +75,11 @@ def summary_parser():
         "--end-date",
         type=datetime.datetime.fromisoformat,
         help="Date to end analysis (inclusive).",
-
     )
     parser.add_argument(
-        "--app",
+        "--apps",
+        nargs="*",
+        default=[],
         help="Apps to summarize (default is all).  Examples: firefox, chromium, chrome",
     )
     parser.add_argument(
@@ -110,7 +111,9 @@ def get_data_ind(data, fieldname):
     return None
 
 
-def organize_data(data, platforms, platform_pattern, start_date, end_date, by_site = False, app_only=None):
+def organize_data(
+    data, platforms, platform_pattern, start_date, end_date, apps, by_site=False
+):
 
     """Organizes the data into a format that is easier to handle."""
 
@@ -138,7 +141,7 @@ def organize_data(data, platforms, platform_pattern, start_date, end_date, by_si
 
         test = entry[test_ind]
         app = entry[app_ind]
-        if app_only != None and app_only != app:
+        if apps and app not in apps:
             continue
         extras = entry[extra_ind].split()
         tags = entry[tag_ind].split()
@@ -242,9 +245,20 @@ def temporal_aggregation(times, timespan=24):
     return aggr_times[::-1]
 
 
-
-def summarize(data, platforms, platform_pattern, timespan, moving_average_window, start_date, end_date, by_site, app_only):
-    org_data = organize_data(data, platforms, platform_pattern, start_date, end_date, by_site, app_only)
+def summarize(
+    data,
+    platforms,
+    platform_pattern,
+    timespan,
+    moving_average_window,
+    start_date,
+    end_date,
+    by_site,
+    apps,
+):
+    org_data = organize_data(
+        data, platforms, platform_pattern, start_date, end_date, apps, by_site
+    )
 
     summary = {}
 
@@ -266,8 +280,8 @@ def summarize(data, platforms, platform_pattern, timespan, moving_average_window
                     if len(all_push_times) <= 1:
                         print(
                             "Skipping tests for the following combination "
-                            "as there is <=1 data point: %s" %
-                            "-".join([platform, app, variant, pl_type])
+                            "as there is <=1 data point: %s"
+                            % "-".join([platform, app, variant, pl_type])
                         )
                         continue
 
@@ -290,13 +304,13 @@ def summarize(data, platforms, platform_pattern, timespan, moving_average_window
                     time_window = []
                     startdate = datetime.datetime.fromisoformat(summarized_vals[0][0])
                     enddate = datetime.datetime.fromisoformat(summarized_vals[-1][0])
-                    if (enddate-startdate).days > moving_average_window:
+                    if (enddate - startdate).days > moving_average_window:
                         for time, val in summarized_vals:
                             window.append(val)
                             time_window.append(time)
                             startdate = datetime.datetime.fromisoformat(time_window[0])
                             enddate = datetime.datetime.fromisoformat(time)
-                            if (enddate-startdate).days > moving_average_window:
+                            if (enddate - startdate).days > moving_average_window:
                                 ma_vals.append((time, np.mean(window)))
                                 window = window[1:]
                                 time_window = time_window[1:]
@@ -397,7 +411,7 @@ def text_summary(summary, width=20, plat_width=50):
         platform_output = False
         app_output = False
         variant_output = False
-        for app, variants in sorted(apps.items(),reverse=1):
+        for app, variants in sorted(apps.items(), reverse=1):
 
             if app_output:
                 spacer = width * 2
@@ -405,7 +419,7 @@ def text_summary(summary, width=20, plat_width=50):
 
             app_output = False
             variant_output = False
-            for variant, pl_types in sorted(variants.items(),reverse=1):
+            for variant, pl_types in sorted(variants.items(), reverse=1):
                 if app in ("chrome", "chromium"):
                     variant = ""
 
@@ -432,7 +446,7 @@ def text_summary(summary, width=20, plat_width=50):
                         prev = np.round(data["moving_average"][-2][1], 2)
 
                     if prev > 0.0:
-                        delta = f" ({np.round(cur/prev,4)})";
+                        delta = f" ({np.round(cur/prev,4)})"
                     else:
                         delta = " (NaN)"
                     lines.append(
@@ -466,11 +480,11 @@ def visual_summary(summary, save=False, directory=None):
 
     for platform, apps in sorted(summary.items()):
 
-        for app, variants in sorted(apps.items(),reverse=1):
+        for app, variants in sorted(apps.items(), reverse=1):
 
-            plt.figure(figsize=(10,10))
+            plt.figure(figsize=(10, 10))
             plt.suptitle(platform + f" {app}")
-            for variant, pl_types in sorted(variants.items(),reverse=1):
+            for variant, pl_types in sorted(variants.items(), reverse=1):
 
                 """
                 This is a simple visualization to show the metric. It
@@ -511,8 +525,8 @@ def visual_summary(summary, save=False, directory=None):
 
             if save:
                 if directory != None:
-                    if directory[-1] != '/':
-                        directory += '/'
+                    if directory[-1] != "/":
+                        directory += "/"
                     dest = directory + platform + ".png"
                 else:
                     dest = platform + ".png"
@@ -547,7 +561,17 @@ def main():
     # Process the data and visualize the results (after saving)
     data = open_csv_data(data_path)
 
-    results = summarize(data, args.platforms, args.platform_pattern, args.timespan, args.moving_average_window, args.start_date, args.end_date, args.by_site, args.app)
+    results = summarize(
+        data,
+        args.platforms,
+        args.platform_pattern,
+        args.timespan,
+        args.moving_average_window,
+        args.start_date,
+        args.end_date,
+        args.by_site,
+        args.apps,
+    )
 
     with pathlib.Path(output_folder, output_file).open("w") as f:
         json.dump(results, f)

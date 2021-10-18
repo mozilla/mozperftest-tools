@@ -17,21 +17,33 @@ def summary_parser():
         "`--compare-browsers`. You must provide data in the CSV format that is returned from "
         "this query: https://sql.telemetry.mozilla.org/queries/79289"
     )
-    parser.add_argument("data", metavar="CSV_DATA", type=str,
-                        help="The data to summarize.")
-    parser.add_argument("--compare-browsers", action="store_true", default=False,
-                        help="Provide a comparison between the browsers found.")
-    parser.add_argument("--platforms", nargs="*",
-                        default=[
-                        #     "linux64-shippable-qr",
-                        #     "windows10-64-shippable-qr",
-                        #     "macosx1015-64-shippable-qr"
-                        ],
-                        help="Platforms to summarize.")
-    parser.add_argument("--output", type=str, default=os.getcwd(),
-                        help="This is where the data will be saved in JSON format. If the "
-                        "path has a `.json` suffix then we'll use the part immediately "
-                        "before it as the file name.")
+    parser.add_argument(
+        "data", metavar="CSV_DATA", type=str, help="The data to summarize."
+    )
+    parser.add_argument(
+        "--compare-browsers",
+        action="store_true",
+        default=False,
+        help="Provide a comparison between the browsers found.",
+    )
+    parser.add_argument(
+        "--platforms",
+        nargs="*",
+        default=[
+            #     "linux64-shippable-qr",
+            #     "windows10-64-shippable-qr",
+            #     "macosx1015-64-shippable-qr"
+        ],
+        help="Platforms to summarize.",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=os.getcwd(),
+        help="This is where the data will be saved in JSON format. If the "
+        "path has a `.json` suffix then we'll use the part immediately "
+        "before it as the file name.",
+    )
     return parser
 
 
@@ -55,7 +67,7 @@ def get_data_ind(data, fieldname):
 
 def organize_data(data, platforms):
     """Organizes the data into a format that is easier to handle.
-    
+
     Ex: data = {
         "platform1": {
             "test1": {
@@ -121,14 +133,11 @@ def organize_data(data, platforms):
             variants.lstrip("None")
 
         mod_test_name = test + f"-{app}-" + "-".join(sorted(extras))
-        test_data = org_data.setdefault(
-            platform, {}
-        ).setdefault(
-            app, {}
-        ).setdefault(
-            variants, {}
-        ).setdefault(
-            mod_test_name, {}
+        test_data = (
+            org_data.setdefault(platform, {})
+            .setdefault(app, {})
+            .setdefault(variants, {})
+            .setdefault(mod_test_name, {})
         )
 
         # Make sure we're never mixing data
@@ -143,10 +152,10 @@ def organize_data(data, platforms):
         #     assert test_data["tags"] == set(list(tags))
         # else:
         #     test_data["tags"] = set(list(tags))
-        
-        test_data.setdefault("values", {}).setdefault(
-            entry[time_ind], []
-        ).append(float(entry[val_ind]))
+
+        test_data.setdefault("values", {}).setdefault(entry[time_ind], []).append(
+            float(entry[val_ind])
+        )
 
     if not org_data:
         possible_platforms = set([entry[platform_ind] for entry in data])
@@ -203,22 +212,27 @@ def summarize(data, platforms):
                         testsg.append(
                             (
                                 test,
-                                time, prev_test_times[test],
-                                np.mean(info["values"][time]), np.mean(info["values"][prev_test_times[test]])
+                                time,
+                                prev_test_times[test],
+                                np.mean(info["values"][time]),
+                                np.mean(info["values"][prev_test_times[test]]),
                             )
                         )
 
                         prev_test_times[test] = time
 
                     if not good:
-                        print(f"Tests which failed and prevent a summary at time {time}:", testsc)
+                        print(
+                            f"Tests which failed and prevent a summary at time {time}:",
+                            testsc,
+                        )
 
                     summarized_vals.append((time, gmean(np.asarray(vals))))
 
                     tests_per_val[str(c)] = {
                         "good": testsg,
                         "bad": testsc,
-                        "vals": vals
+                        "vals": vals,
                     }
 
                     prev_time = time
@@ -240,8 +254,8 @@ def summarize(data, platforms):
                             "expedia-firefox-cold-webrender"
                 """
 
-
                 import json
+
                 print("hereeee")
                 print(json.dumps(tests_per_val, indent=4))
 
@@ -257,11 +271,8 @@ def summarize(data, platforms):
                         if info["values"].get(time, None):
                             if prev_test_times.get(test, None):
                                 ratios.append(
-                                    np.mean(
-                                        info["values"][time]
-                                    ) / np.mean(
-                                        info["values"][prev_test_times[test]]
-                                    )
+                                    np.mean(info["values"][time])
+                                    / np.mean(info["values"][prev_test_times[test]])
                                 )
                             else:
                                 prev_test_times[test] = time
@@ -293,18 +304,28 @@ def summarize(data, platforms):
 
                 plt.figure()
                 plt.title(platform)
-                plt.plot(list(((all_ratios-min(all_ratios))/(max(all_ratios)-min(all_ratios)))), label="Ratios geomean")
+                plt.plot(
+                    list(
+                        (
+                            (all_ratios - min(all_ratios))
+                            / (max(all_ratios) - min(all_ratios))
+                        )
+                    ),
+                    label="Ratios geomean",
+                )
                 # plt.show()
-
 
                 # plt.figure()
 
-                x = np.asarray([y for x, y in sorted(summarized_vals, key=lambda x: x[0])])
-                times = np.asarray([x for x, y in sorted(summarized_vals, key=lambda x: x[0])])
-                sorted_summary = (x-min(x))/(max(x)-min(x))
+                x = np.asarray(
+                    [y for x, y in sorted(summarized_vals, key=lambda x: x[0])]
+                )
+                times = np.asarray(
+                    [x for x, y in sorted(summarized_vals, key=lambda x: x[0])]
+                )
+                sorted_summary = (x - min(x)) / (max(x) - min(x))
                 print(sorted_summary)
                 print(platform)
-
 
                 # break
                 # plt.plot([i for i in range(len(sorted_summary))], [y for x, y in sorted_summary])
@@ -313,12 +334,11 @@ def summarize(data, platforms):
                 plt.legend()
                 plt.show()
 
-
                 summary.setdefault(platform, {}).setdefault(variant, {})[app] = {
                     "tests": list(tests.keys()),
                     "values-gmean": sorted_summary,
                     "values-ratio": all_ratios,
-                    "times": times
+                    "times": times,
                 }
 
 
