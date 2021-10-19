@@ -309,9 +309,12 @@ def main():
             )
 
     # Analyze the data
-    run_variance_analysis(results["base"] + results["new"], tests, args.platform)
-
-    return task_dir
+    run_variance_analysis(
+        results["base"] + results["new"],
+        tests,
+        args.platform,
+        groupings=["new", "base"],
+    )
 
 
 if __name__ == "__main__":

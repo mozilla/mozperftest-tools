@@ -18,7 +18,7 @@ Here's a sample command that can be used:
 python3 run_variance_analysis.py --base-revision 5e4047061e46c5cb86d1ef694bc206fc8f4e7d20 --new-revision 5e4047061e46c5cb86d1ef694bc206fc8f4e7d20 --base-branch autoland --new-branch autoland --tests cnn --platform linux --output testing --config ptnb-config-linux-new.yml --search-crons
 ```
 
-Only one platform may be specified at a time, but multiple tests are ok. The tests can be specified as exact matches or a substring of the test (e.g. cnn). The config can be used to specify the Transformer to use on the data - all of fields get replaced.
+Only one platform may be specified at a time, but multiple tests are ok. The tests can be specified as exact matches or a substring of the test (e.g. cnn). The config can be used to specify the Transformer to use on the data - all of fields get replaced. **Be very careful with the test and platform selection to ensure that you aren't mixing data. In the majority of cases, the ReplicateTransformer should take care of this by combining the Taskcluster task name with the extra options found in the perfherder-data. The number of artifacts downloaded will tell you if you are downloading the right things (1 artifact per task).**
 
 The base revision should be a CI run without changes and the new revision should point to the CI run with changes.
 
