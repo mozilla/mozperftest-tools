@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <script>
+            function post(path, params, method='post') {
+                const form = document.createElement('form');
+                form.method = method;
+                form.action = path;
+                form.id = 'uploadform';
+
+                for (const key in params) {
+                    if (params.hasOwnProperty(key)) {
+                        const textarea = document.createElement('textarea');
+                        textarea.name = key;
+                        textarea.value = params[key];
+                        textarea.style.display = "none";
+                        form.appendChild(textarea);
+                    }
+                }
+
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+            
+            // TODO Need to escape all `'`,
+            // Otherwsie, this will result in javascript failures.
+            var template = replace_me
+
+            // Create a form object, and send it
+            post("http://localhost:8000/from-template", {"template": template})
+        </script>
+    </body>
+</html>

@@ -1,0 +1,12 @@
+output: /home/sparky/mozilla-source/perf-sticky-pooling/with_vs_without_pooling_linux_new.json
+custom_transform: ReplicateRetriever
+
+file_groups:
+  without-pooling:
+    task_group_id: Ji1Y0HDyROGJL-VOOPT2hQ
+    path: /home/sparky/mozilla-source/perf-sticky-pooling/without-pooling
+    artifact: perfherder
+  with-pooling:
+    task_group_id: EPTDi0cWRGe-d-M4n2OP1A
+    path: /home/sparky/mozilla-source/perf-sticky-pooling/with-pooling
+    artifact: perfherder

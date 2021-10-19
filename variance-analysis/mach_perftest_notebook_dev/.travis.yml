@@ -1,0 +1,19 @@
+language: python
+python:
+    - "3.6"
+
+branches:
+    only:
+        - master
+        - starter
+
+install:
+    - "pip install -r requirements.txt"
+
+script:
+    - "export NOTEBOOK_PLUGIN=testing/notebook_plugin"
+    - "python -m black -l 100 ."
+    - "python setup.py install"
+    - "perftestnotebook --config=testing/configs/config_single_json_test.yaml --no-iodide --sort-files"
+    - "perftestnotebook --config=testing/configs/config_artifactdownloader_output_test.yaml --no-iodide --sort-files"
+    - "python -m pytest -v testing/tests/"
