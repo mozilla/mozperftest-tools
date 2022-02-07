@@ -592,12 +592,12 @@ if __name__ == "__main__":
 
     # Make sure we only downloaded one task
     failure_msg = (
-        "Not enough or too many artifacts downloaded for %s, can't compare! "
+        "Not enough artifacts downloaded for %s, can't compare! "
         + "Found paths: %s \nTry using --search-crons if you are sure the task exists."
     )
-    if not base_paths or len(base_paths) > 1:
+    if not base_paths:
         raise Exception(failure_msg % (args.base_revision, base_paths))
-    if not new_paths or len(new_paths) > 1:
+    if not new_paths:
         raise Exception(failure_msg % (args.new_revision, new_paths))
 
     # Gather the videos and split them between warm and cold
