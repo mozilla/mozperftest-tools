@@ -826,10 +826,6 @@ if __name__ == "__main__":
     base_videos = find_videos(base_paths[0][0])
     new_videos = find_videos(new_paths[0][0])
 
-    print("aelkhwalke")
-    print(base_vismet)
-    print(new_vismet)
-
     # If we are looking at something other than similarity,
     # prepare the data for this (open, and split between
     # cold and warm)
