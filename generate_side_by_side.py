@@ -219,6 +219,17 @@ def find_videos(artifact_dir):
     }
 
 
+def find_videos_with_retriggers(artifact_dirs):
+    results = {"cold": [], "warm": []}
+
+    for artifact_dir in artifact_dirs:
+        videos = find_videos(artifact_dir[0])
+        results["cold"].extend(videos["cold"])
+        results["warm"].extend(videos["warm"])
+
+    return results
+
+
 def get_similarity(
     old_videos_info, new_videos_info, output, prefix="", most_similar=False
 ):
@@ -590,8 +601,8 @@ if __name__ == "__main__":
         raise Exception(failure_msg % (args.new_revision, new_paths))
 
     # Gather the videos and split them between warm and cold
-    base_videos = find_videos(base_paths[0][0])
-    new_videos = find_videos(new_paths[0][0])
+    base_videos = find_videos_with_retriggers(base_paths)
+    new_videos = find_videos_with_retriggers(new_paths)
 
     run_cold = args.cold
     run_warm = args.warm
