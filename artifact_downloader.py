@@ -151,19 +151,13 @@ def get_task_artifacts(task_id):
 
 def get_tasks_in_group(group_id):
     reply = get_json(
-        TC_PREFIX + "v1/task-group/" + group_id + "/list",
-        {
-            "limit": "200",
-        },
+        TC_PREFIX + "v1/task-group/" + group_id + "/list", {"limit": "200"}
     )
     tasks = reply["tasks"]
     while "continuationToken" in reply:
         reply = get_json(
             TC_PREFIX + "v1/task-group/" + group_id + "/list",
-            {
-                "limit": "200",
-                "continuationToken": reply["continuationToken"],
-            },
+            {"limit": "200", "continuationToken": reply["continuationToken"]},
         )
         tasks += reply["tasks"]
     return tasks
@@ -246,7 +240,12 @@ def unzip_file(abs_zip_path, output_dir, count=0):
         with zipfile.ZipFile(abs_zip_path, "r") as z:
             z.extractall(tmp_path)
     else:
+        task_id = os.path.split(abs_zip_path)[1].split("_")[0]
         extract_tgz(abs_zip_path, tmp_path)
+        os.rename(
+            os.path.join(tmp_path, "browsertime-results"),
+            os.path.join(tmp_path, task_id + "_browsertime-results"),
+        )
     return tmp_path
 
 
@@ -260,6 +259,42 @@ def move_file(abs_filepath, output_dir, count=0):
 
     shutil.copyfile(abs_filepath, os.path.join(tmp_path, fname))
     return tmp_path
+
+
+def get_perfherder_data(task_group_id, task_dir, platform, test_name):
+    tgi_path = os.path.join(task_dir, task_group_id, "task-group-information.json")
+    if os.path.exists(tgi_path):
+        with open(tgi_path, "r") as f:
+            tasks = json.load(f)
+    else:
+        raise Exception("Cannot find task group information at " + tgi_path)
+
+    TOTAL_TASKS = len(tasks)
+    for task in tasks:
+        if platform not in task["task"]["metadata"]["name"]:
+            continue
+        test = suite_name_from_task_name(task["task"]["metadata"]["name"])
+        if test == test_name:
+            log(
+                "Found %s with suite-name: %s"
+                % (task["task"]["metadata"]["name"], test)
+            )
+            task_id = task["status"]["taskId"]
+
+            artifacts = get_task_artifacts(task_id)
+            for artifact in artifacts:
+                if "perfherder-data" in artifact["name"]:
+                    url_data = (
+                        TC_PREFIX
+                        + "v1/task/"
+                        + task_id
+                        + "/artifacts/"
+                        + artifact["name"]
+                    )
+                    return get_json(url_data)
+
+    raise Exception("Could not find perfherder data")
+    return 0
 
 
 def artifact_downloader(
@@ -412,6 +447,11 @@ def artifact_downloader(
                                 return aname
                         return None
 
+                    def _check_unzip(filen):
+                        return unzip_artifact and (
+                            filen.endswith(".zip") or filen.endswith(".tgz")
+                        )
+
                     files = os.listdir(downloads_dir)
                     ffound = [
                         f
@@ -421,18 +461,17 @@ def artifact_downloader(
                     if ffound:
                         log("File already exists.")
                         CURR_REQS -= 1
-
                         # There should only be file found
                         filen = ffound[0]
                         aname = _pattern_match(filen, artifact_to_get)
 
-                        if aname == "grcov" or "grcov" in aname or unzip_artifact:
-                            unzip_file(filen, data_dir, test_counter)
+                        if aname == "grcov" or "grcov" in aname or _check_unzip(filen):
+                            unzip_file(filen, data_dir[aname], test_counter)
                         else:
-                            move_file(filen, data_dir, test_counter)
+                            move_file(filen, data_dir[aname], test_counter)
 
                         taskid_to_file_map[task_id] = os.path.join(
-                            data_dir, str(test_counter)
+                            data_dir[aname], str(test_counter)
                         )
 
                         return filen
@@ -475,7 +514,7 @@ def artifact_downloader(
                             filen = download_artifact(task_id, artifact, downloads_dir)
                             CURR_REQS -= 1
 
-                            if aname == "grcov" or unzip_artifact:
+                            if aname == "grcov" or _check_unzip(filen):
                                 unzip_file(filen, data_dir[aname], test_counter)
                             else:
                                 move_file(filen, data_dir[aname], test_counter)

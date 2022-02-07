@@ -26,7 +26,7 @@ except ImportError:
     from urllib2 import urlopen
 
 from artifact_downloader import artifact_downloader
-from task_processor import get_task_data_paths
+from task_processor import get_task_data_paths, match_vismets_with_videos, sorted_nicely
 
 
 TASK_IDS = (
@@ -142,6 +142,18 @@ def side_by_side_parser():
         help="This is where the data will be saved. Defaults to CWD. "
         + "You can include a name for the file here, otherwise it will "
         + "default to side-by-side.mp4.",
+    )
+    parser.add_argument(
+        "--metric",
+        type=str,
+        default="speedindex",
+        help="Metric to use for side-by-side comparison.",
+    )
+    parser.add_argument(
+        "--vismetPath",
+        type=str,
+        default=False,
+        help="Paths to visualmetrics.py for step chart generation.",
     )
     return parser
 
@@ -367,6 +379,193 @@ def find_lowest_similarity(base_videos, new_videos, output, prefix, most_similar
     )
 
 
+def open_and_organize_perfherder(files, vismet_mappings, metric):
+    def _open_perfherder(filen):
+        with open(filen) as f:
+            return json.load(f)
+
+    res = {"cold": [], "warm": []}
+
+    for filen in files[0]:
+        data = _open_perfherder(filen)
+
+        vismet_id = ""
+        btime_id = ""
+        for v_id, t_id in vismet_mappings.items():
+            if v_id in filen[0]:
+                vismet_id = v_id
+                btime_id = t_id
+                break
+
+        for suite in data["suites"]:
+            pl_type = "warm"
+            if "cold" in suite["extraOptions"]:
+                pl_type = "cold"
+
+            for subtest in suite["subtests"]:
+                if subtest["name"].lower() != metric.lower():
+                    continue
+                subtest["vismet_id"] = vismet_id
+                subtest["btime_id"] = btime_id
+                # Each entry here will be a single retrigger of
+                # the test for the requested metric (ordered
+                # based on the `files` ordering)
+                res[pl_type].append(subtest)
+
+    return res
+
+
+def generate_step_chart(oldvid, newvid, vismetPath, prefix, metric, output):
+    print("Generating step chart for %s" % metric)
+
+    oldvid_metrics = json.loads(
+        subprocess.check_output(
+            [
+                "python",
+                vismetPath,
+                "--orange",
+                "--perceptual",
+                "--contentful",
+                "--force",
+                "--renderignore",
+                "5",
+                "--json",
+                "--viewport",
+                "--video",
+                oldvid,
+            ]
+        )
+    )
+
+    newvid_metrics = json.loads(
+        subprocess.check_output(
+            [
+                "python",
+                vismetPath,
+                "--orange",
+                "--perceptual",
+                "--contentful",
+                "--force",
+                "--renderignore",
+                "5",
+                "--json",
+                "--viewport",
+                "--video",
+                newvid,
+            ]
+        )
+    )
+
+    if metric.lower() == "perceptualspeedindex":
+        progress = "PerceptualSpeedIndexProgress"
+        metricName = "PerceptualSpeedIndex"
+    elif metric.lower() == "contentfulspeedindex":
+        progress = "ContentfulSpeedIndexProgress"
+        metricName = "ContentfulSpeedIndex"
+    else:
+        progress = "VisualProgress"
+        metricName = "SpeedIndex"
+
+    x = []
+    y = []
+    for pt in oldvid_metrics[progress].split(","):
+        x_val, y_val = pt.split("=")
+        x.append(int(x_val))
+        y.append(int(y_val))
+    plt.step(x, y, label="Before (%d)" % oldvid_metrics[metricName])
+
+    x = []
+    y = []
+    for pt in newvid_metrics[progress].split(","):
+        x_val, y_val = pt.split("=")
+        x.append(int(x_val))
+        y.append(int(y_val))
+    plt.step(x, y, label="After (%d)" % newvid_metrics[metricName])
+
+    plt.legend(loc="lower right")
+    plt.title("%s %s" % (prefix.rstrip("_"), metricName))
+    plt.savefig(str(output / "%s-%s-step.png" % (prefix.rstrip("_"), metric)))
+    plt.clf()
+
+
+def find_closest_videos(
+    base_videos, base_vismet, new_videos, new_vismet, output, prefix, metric
+):
+    base_btime_id = ""
+    base_min_idx = None
+    for retrigger in base_vismet:
+        # Find the video which most closely matches the average
+        diff = [
+            abs(retrigger["replicates"][i] - retrigger["value"])
+            for i in range(0, len(retrigger["replicates"]))
+        ]
+        new_min = min(diff)
+        if not base_min_idx or new_min < base_min_diff:
+            base_min_diff = new_min
+            base_min_idx = diff.index(base_min_diff)
+            base_btime_id = retrigger["btime_id"]
+
+    print(
+        "BASE: metric=%s prefix=%s mean=%d closest=%d index=%d"
+        % (
+            metric,
+            prefix,
+            retrigger["value"],
+            retrigger["replicates"][base_min_idx],
+            base_min_idx,
+        )
+    )
+
+    new_btime_id = ""
+    new_min_idx = None
+    for retrigger in new_vismet:
+        # Find the video which most closely matches the average
+        diff = [
+            abs(retrigger["replicates"][i] - retrigger["value"])
+            for i in range(0, len(retrigger["replicates"]))
+        ]
+        new_min = min(diff)
+        if not new_min_idx or new_min < new_min_diff:
+            new_min_diff = new_min
+            new_min_idx = diff.index(new_min_diff)
+            new_btime_id = retrigger["btime_id"]
+
+    print(
+        "NEW: metric=%s prefix=%s mean=%d closest=%d index=%d"
+        % (
+            metric,
+            prefix,
+            retrigger["value"],
+            retrigger["replicates"][new_min_idx],
+            new_min_idx,
+        )
+    )
+
+    # Filter out all videos which are unrelated to the current task (retrigger)
+    filt_base_vids = sorted_nicely([vid for vid in base_videos if base_btime_id in vid])
+    filt_new_vids = sorted_nicely([vid for vid in new_videos if new_btime_id in vid])
+
+    oldvid = base_videos[base_min_idx]
+    oldvidnewpath = str(pathlib.Path(output, "%sold_video.mp4" % prefix))
+    shutil.copyfile(oldvid, oldvidnewpath)
+
+    newvid = new_videos[new_min_idx]
+    newvidnewpath = str(pathlib.Path(output, "%snew_video.mp4" % prefix))
+    shutil.copyfile(newvid, newvidnewpath)
+
+    if args.vismetPath:
+        generate_step_chart(oldvid, newvid, args.vismetPath, prefix, metric, output)
+
+    # The index values used here are for frame selection during video editing.
+    # We use 0 to select all frames.
+    return {
+        "oldvid": oldvidnewpath,
+        "oldvid_ind": 0,
+        "newvid": newvidnewpath,
+        "newvid_ind": 0,
+    }
+
+
 def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, filename):
     before_vid = pathlib.Path(output_dir, "before.mp4")
     after_vid = pathlib.Path(output_dir, "after.mp4")
@@ -404,45 +603,21 @@ def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, fil
 
     # Cut the videos
     subprocess.check_output(
-        [
-            "ffmpeg",
-            "-i",
-            str(base_video),
-            "-vf",
-            "select=gt(n\\,%s)" % base_ind,
-        ]
+        ["ffmpeg", "-i", str(base_video), "-vf", "select=gt(n\\,%s)" % base_ind]
         + [str(before_cut_vid)]
     )
     subprocess.check_output(
-        [
-            "ffmpeg",
-            "-i",
-            str(new_video),
-            "-vf",
-            "select=gt(n\\,%s)" % new_ind,
-        ]
+        ["ffmpeg", "-i", str(new_video), "-vf", "select=gt(n\\,%s)" % new_ind]
         + [str(after_cut_vid)]
     )
 
     # Resample
     subprocess.check_output(
-        [
-            "ffmpeg",
-            "-i",
-            str(before_cut_vid),
-            "-filter:v",
-            "fps=fps=60",
-        ]
+        ["ffmpeg", "-i", str(before_cut_vid), "-filter:v", "fps=fps=60"]
         + [str(before_rs_vid)]
     )
     subprocess.check_output(
-        [
-            "ffmpeg",
-            "-i",
-            str(after_cut_vid),
-            "-filter:v",
-            "fps=fps=60",
-        ]
+        ["ffmpeg", "-i", str(after_cut_vid), "-filter:v", "fps=fps=60"]
         + [str(after_rs_vid)]
     )
 
@@ -501,6 +676,13 @@ if __name__ == "__main__":
             "Vismet tasks do not contain browsertime video recordings."
             + "We'll assume you meant this platform: %s" % args.platform
         )
+    if args.vismetPath and not pathlib.Path(args.vismetPath).exists():
+        raise Exception("Cannot find the vismet script at: %s" % args.vismetPath)
+    if args.metric != "similarity" and args.skip_download:
+        print(
+            "WARNING: Downloads will not be skipped as you are using something other "
+            "than the similarity metric (only supported for this metric)."
+        )
 
     # Parse the given output argument
     filename = "side-by-side.mp4"
@@ -540,18 +722,20 @@ if __name__ == "__main__":
                 print("Removing existing task group folder: %s" % str(task_dir))
                 shutil.rmtree(str(task_dir))
 
-    def _search_for_paths(rev_ids):
+    def _search_for_paths(rev_ids, artifact, open_data=False):
         found_paths = []
         for rev_id in rev_ids:
             if found_paths:
                 break
             # Get the paths to the directory holding the artifacts
             found_paths = list(
-                get_task_data_paths(
-                    rev_id, str(output), artifact="browsertime-results"
-                ).values()
+                get_task_data_paths(rev_id, str(output), artifact=artifact).values()
             )
         return found_paths
+
+    # Setup the vismet version of the platform and test names
+    vismet_platform = args.platform.replace("test-", "test-vismet-")
+    test_no_e10s = args.test_name.replace("-e10s", "")
 
     # Download the artifacts
     if not args.skip_download:
@@ -564,12 +748,35 @@ if __name__ == "__main__":
                 output_dir=str(output),
                 test_suites=[args.test_name],
                 platform=args.platform,
-                artifact_to_get=["browsertime-results"],
+                artifact_to_get=["browsertime-results", "perfherder-data"],
                 unzip_artifact=True,
                 download_failures=True,
                 ingest_continue=False,
             )
-            base_paths = _search_for_paths([base_revision_id])
+            base_paths = _search_for_paths([base_revision_id], "browsertime-results")
+            base_vismet = _search_for_paths([base_revision_id], "perfherder-data")
+
+            # Get the vismet perfherder data now
+            artifact_downloader(
+                base_revision_id,
+                output_dir=str(output),
+                test_suites=[test_no_e10s],
+                platform=vismet_platform,
+                artifact_to_get=["perfherder-data"],
+                unzip_artifact=False,
+                download_failures=True,
+                ingest_continue=False,
+            )
+            vismet_paths = _search_for_paths([base_revision_id], "perfherder-data")
+
+            base_vismet_taskids = []
+            for path in vismet_paths[0]:
+                base_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
+
+            base_vismet_mapping = match_vismets_with_videos(
+                base_revision_id, str(output), base_vismet_taskids
+            )
+            base_vismet[0].extend(vismet_paths[0])
 
         new_paths = []
         for new_revision_id in new_revision_ids:
@@ -580,15 +787,41 @@ if __name__ == "__main__":
                 output_dir=str(output),
                 test_suites=[args.new_test_name or args.test_name],
                 platform=args.new_platform or args.platform,
-                artifact_to_get=["browsertime-results"],
+                artifact_to_get=["browsertime-results", "perfherder-data"],
                 unzip_artifact=True,
                 download_failures=True,
                 ingest_continue=False,
             )
-            new_paths = _search_for_paths([new_revision_id])
+            new_paths = _search_for_paths([new_revision_id], "browsertime-results")
+            new_vismet = _search_for_paths([new_revision_id], "perfherder-data")
+
+            # Get the vismet perfherder data now
+            artifact_downloader(
+                new_revision_id,
+                output_dir=str(output),
+                test_suites=[test_no_e10s],
+                platform=vismet_platform,
+                artifact_to_get=["perfherder-data"],
+                unzip_artifact=False,
+                download_failures=True,
+                ingest_continue=False,
+            )
+            vismet_paths = _search_for_paths([new_revision_id], "perfherder-data")
+
+            new_vismet_taskids = []
+            for path in vismet_paths[0]:
+                new_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
+
+            new_vismet_mapping = match_vismets_with_videos(
+                new_revision_id, str(output), new_vismet_taskids
+            )
+            new_vismet[0].extend(vismet_paths[0])
     else:
-        base_paths = _search_for_paths(base_revision_ids)
-        new_paths = _search_for_paths(new_revision_ids)
+        base_paths = _search_for_paths(base_revision_ids, "browsertime-results")
+        base_vismet = _search_for_paths(base_revision_ids, "perfherder-data")
+
+        new_paths = _search_for_paths(new_revision_ids, "browsertime-results")
+        new_vismet = _search_for_paths(new_revision_ids, "perfherder-data")
 
     # Make sure we only downloaded one task
     failure_msg = (
@@ -604,6 +837,23 @@ if __name__ == "__main__":
     base_videos = find_videos_with_retriggers(base_paths)
     new_videos = find_videos_with_retriggers(new_paths)
 
+    # If we are looking at something other than similarity,
+    # prepare the data for this (open, and split between
+    # cold and warm)
+    if args.metric != "similarity":
+        print("Opening, and organizing perfherder data...")
+        org_base_vismet = open_and_organize_perfherder(
+            base_vismet, base_vismet_mapping, args.metric
+        )
+        org_new_vismet = open_and_organize_perfherder(
+            new_vismet, new_vismet_mapping, args.metric
+        )
+
+        if (not org_new_vismet["cold"] and not org_new_vismet["warm"]) or (
+            not org_base_vismet["cold"] and not org_base_vismet["warm"]
+        ):
+            raise Exception("Could not find any data with the metric: %s" % args.metric)
+
     run_cold = args.cold
     run_warm = args.warm
     if not args.cold and not args.warm:
@@ -614,23 +864,45 @@ if __name__ == "__main__":
     print("Starting comparisons, this may take a few minutes")
     if run_cold:
         print("Running comparison for cold pageloads...")
-        cold_pairing = find_lowest_similarity(
-            base_videos["cold"],
-            new_videos["cold"],
-            str(output),
-            "cold_",
-            most_similar=args.most_similar,
-        )
+        if args.metric == "similarity":
+            cold_pairing = find_lowest_similarity(
+                base_videos["cold"],
+                new_videos["cold"],
+                str(output),
+                "cold_",
+                most_similar=args.most_similar,
+            )
+        else:
+            cold_pairing = find_closest_videos(
+                base_videos["cold"],
+                org_base_vismet["cold"],
+                new_videos["cold"],
+                org_new_vismet["cold"],
+                str(output),
+                "cold_",
+                args.metric,
+            )
     if run_warm:
         gc.collect()
         print("Running comparison for warm pageloads...")
-        warm_pairing = find_lowest_similarity(
-            base_videos["warm"],
-            new_videos["warm"],
-            str(output),
-            "warm_",
-            most_similar=args.most_similar,
-        )
+        if args.metric == "similarity":
+            warm_pairing = find_lowest_similarity(
+                base_videos["warm"],
+                new_videos["warm"],
+                str(output),
+                "warm_",
+                most_similar=args.most_similar,
+            )
+        else:
+            warm_pairing = find_closest_videos(
+                base_videos["warm"],
+                org_base_vismet["warm"],
+                new_videos["warm"],
+                org_new_vismet["warm"],
+                str(output),
+                "warm_",
+                args.metric,
+            )
 
     # Build up the side-by-side comparisons now
     if run_cold:

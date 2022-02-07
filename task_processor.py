@@ -35,6 +35,35 @@ def sorted_nicely(data):
     return sorted(data, key=alphanum_key)
 
 
+def match_vismets_with_videos(task_group_id, path, vismet_task_ids):
+    """
+    Returns a mapping from vismet task IDs to the videos.
+    """
+    task_dir = os.path.join(path, task_group_id)
+    taskgraph_json = os.path.join(task_dir, "task-group-information.json")
+
+    with open(taskgraph_json) as f:
+        taskgraph = json.load(f)
+
+    # First filter down to only browsertime tasks
+    mapping = {task_id: None for task_id in vismet_task_ids}
+    for task in taskgraph:
+        task_id = task.get("status", {}).get("taskId", "")
+        if task_id not in mapping:
+            continue
+
+        vismet_fetches = json.loads(task["task"]["payload"]["env"]["MOZ_FETCHES"])
+        for fetch in vismet_fetches:
+            if "browsertime-results" in fetch["artifact"]:
+                mapping[task_id] = fetch["task"]
+                break
+
+        if all(mapping):
+            break
+
+    return mapping
+
+
 def get_task_data_paths(
     task_group_id,
     path,
