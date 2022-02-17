@@ -659,6 +659,44 @@ def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, fil
         + [str(pathlib.Path(output_dir, filename))]
     )
 
+def convert_mp4_to_gif(path_to_mp4, path_to_gif, slow_motion=False):
+    path_to_gif = str(path_to_gif)
+    fps = 30
+    # Use slow motion for more subtle differences
+    if slow_motion:
+        fps = 100
+        path_to_gif = path_to_gif.replace(".gif", "-slow-motion.gif")
+
+    # Generate palette for a better quality
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i",
+            str(path_to_mp4),
+            "-vf",
+            f"fps={fps},scale=1024:-1:flags=lanczos,palettegen",
+            "-y",
+        ]
+        + [path_to_gif.replace(".gif", "-palette.gif")]
+    )
+
+    subprocess.check_output(
+        [
+            "ffmpeg",
+            "-i",
+            str(path_to_mp4),
+            "-i",
+            path_to_gif.replace(".gif", "-palette.gif"),
+            "-filter_complex",
+            f"fps={fps},scale=1024:-1:flags=lanczos[x];[x][1:v]paletteuse",
+            "-loop",
+            "-1",
+        ]
+        + [str(path_to_gif)]
+    )
+    subprocess.check_output(["rm", path_to_gif.replace(".gif", "-palette.gif")])
+
+    return str(path_to_gif)
 
 if __name__ == "__main__":
     args = side_by_side_parser().parse_args()
@@ -916,6 +954,20 @@ if __name__ == "__main__":
             "cold-" + filename,
         )
         print("Successfully built a side-by-side cold comparison: %s" % output_name)
+
+        gif_output_name = pathlib.Path(output, "cold-" + filename.replace(".mp4", ".gif"))
+        gif_output_name = convert_mp4_to_gif(
+            output_name,
+            gif_output_name
+        )
+        print("Successfully converted the side-by-side cold comparison to gif: %s" % gif_output_name)
+
+        gif_output_name = convert_mp4_to_gif(
+            output_name,
+            gif_output_name,
+            slow_motion=True
+        )
+        print("Successfully converted the side-by-side cold comparison to slow motion gif: %s" % gif_output_name)
     if run_warm:
         output_name = str(pathlib.Path(output, "warm-" + filename))
         build_side_by_side(
@@ -927,3 +979,17 @@ if __name__ == "__main__":
             "warm-" + filename,
         )
         print("Successfully built a side-by-side warm comparison: %s" % output_name)
+
+        gif_output_name = pathlib.Path(output, "warm-" + filename.replace(".mp4", ".gif"))
+        gif_output_name = convert_mp4_to_gif(
+            output_name,
+            gif_output_name
+        )
+        print("Successfully converted the side-by-side warm comparison to gif: %s" % gif_output_name)
+
+        gif_output_name = convert_mp4_to_gif(
+            output_name,
+            gif_output_name,
+            slow_motion=True
+        )
+        print("Successfully converted the side-by-side warm comparison to slow motion gif: %s" % gif_output_name)
