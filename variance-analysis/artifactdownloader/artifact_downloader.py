@@ -93,7 +93,7 @@ def artifact_downloader_parser():
 
 # Used to limit the number of concurrent data requests
 START_TIME = time.time()
-MAX_REQUESTS = 5
+MAX_REQUESTS = 20
 CURR_REQS = 0
 RETRY = 5
 TOTAL_TASKS = 0
@@ -272,6 +272,12 @@ def artifact_downloader(
     global FAILED
     global ALL_TASKS
 
+    CURR_REQS = 0
+    CURR_TASK = 0
+    TOTAL_TASKS = 0
+    FAILED = []
+    ALL_TASKS = []
+
     head_rev = ""
     all_tasks = False
     if "all" in test_suites:
@@ -348,6 +354,9 @@ def artifact_downloader(
         # Get the test name
         if platform not in task["task"]["metadata"]["name"]:
             continue
+        if task["status"]["state"] in ("pending", "unscheduled"):
+            log(f'Skipping task {task["status"]["taskId"]}...')
+            continue
         test_name = suite_name_from_task_name(task["task"]["metadata"]["name"])
         log(
             "Found %s with suite-name: %s"
@@ -360,10 +369,7 @@ def artifact_downloader(
             test_name in test_suites
             or any([True if t in test_name else False for t in test_suites])
         ):
-            print("spraky")
-            print(all_tasks)
-            print(test_name)
-            print(test_suites)
+            print("Downloading...")
             download_this_task = True
 
         if all_tasks or download_this_task:
@@ -404,82 +410,97 @@ def artifact_downloader(
                 taskid_to_file_map,
             ):
                 global CURR_REQS
+                to_remove = 1
 
-                def _pattern_match(name, artifacts_to_get):
-                    for aname in artifacts_to_get:
-                        if aname in name:
-                            return aname
-                    return None
+                try:
 
-                files = os.listdir(downloads_dir)
-                ffound = [
-                    f
-                    for f in files
-                    if _pattern_match(f, artifact_to_get) and task_id in f
-                ]
-                if ffound:
-                    log("File already exists.")
-                    CURR_REQS -= 1
+                    def _pattern_match(name, artifacts_to_get):
+                        for aname in artifacts_to_get:
+                            if aname in name:
+                                return aname
+                        return None
 
-                    # There should only be file found
-                    filen = ffound[0]
-                    aname = _pattern_match(filen, artifact_to_get)
+                    files = os.listdir(downloads_dir)
+                    print("sparky",downloads_dir,files,artifact_to_get,task_id)
+                    ffound = [
+                        f
+                        for f in files
+                        if _pattern_match(f, artifact_to_get) and task_id in f
+                    ]
+                    if ffound:
+                        log("File already exists.")
+                        CURR_REQS -= to_remove
 
-                    if aname == "grcov" or "grcov" in aname or unzip_artifact:
-                        unzip_file(filen, data_dir, test_counter)
-                    else:
-                        move_file(filen, data_dir, test_counter)
+                        # There should only be file found
+                        filen = ffound[0]
+                        aname = _pattern_match(filen, artifact_to_get)
 
-                    taskid_to_file_map[task_id] = os.path.join(
-                        data_dir, str(test_counter)
-                    )
+                        if aname == "grcov" or "grcov" in aname or unzip_artifact:
+                            unzip_file(filen, data_dir, test_counter)
+                        else:
+                            move_file(filen, data_dir, test_counter)
 
-                    return filen
+                        taskid_to_file_map[task_id] = os.path.join(
+                            data_dir, str(test_counter)
+                        )
 
-                CURR_REQS += 1
-                log("Getting task artifacts for %s" % task_id)
-                artifacts = get_task_artifacts(task_id)
-                CURR_REQS -= 1
+                        return filen
 
-                # Check if the artifact to get exists before checking for
-                # failures in the task
-                exists = False
-                for artifact in artifacts:
-                    if _pattern_match(artifact["name"], artifact_to_get):
-                        exists = True
-                if not exists:
-                    log("Missing %s in %s" % (artifact_to_get, task_id))
-                    CURR_REQS -= 1
-                    return
+                    CURR_REQS += 1
+                    to_remove += 1
+                    log("Getting task artifacts for %s" % task_id)
+                    artifacts = get_task_artifacts(task_id)
+                    CURR_REQS -= to_remove
+                    to_remove -= 1
 
-                if not download_failures:
-                    log("Checking for failures on %s" % task_id)
-                    failed = None
+                    # Check if the artifact to get exists before checking for
+                    # failures in the task
+                    exists = False
                     for artifact in artifacts:
-                        if "log_error" in artifact["name"]:
-                            CURR_REQS += 1
-                            filen = download_artifact(task_id, artifact, downloads_dir)
-                            CURR_REQS -= 1
-                            if os.stat(filen).st_size != 0:
-                                failed = artifact["name"]
-                    if failed:
-                        log("Skipping a failed test: " + failed)
+                        if _pattern_match(artifact["name"], artifact_to_get):
+                            exists = True
+                    if not exists:
+                        log("Missing %s in %s" % (artifact_to_get, task_id))
+                        CURR_REQS -= to_remove
                         return
 
-                for artifact in artifacts:
-                    aname = _pattern_match(artifact["name"], artifact_to_get)
-                    if aname:
-                        filen = download_artifact(task_id, artifact, downloads_dir)
-                        CURR_REQS -= 1
+                    if not download_failures:
+                        log("Checking for failures on %s" % task_id)
+                        failed = None
+                        for artifact in artifacts:
+                            if "log_error" in artifact["name"]:
+                                to_remove += 1
+                                CURR_REQS += 1
+                                filen = download_artifact(task_id, artifact, downloads_dir)
+                                CURR_REQS -= to_remove
+                                to_remove -= 1
+                                if os.stat(filen).st_size != 0:
+                                    failed = artifact["name"]
+                        if failed:
+                            log("Skipping a failed test: " + failed)
+                            CURR_REQS -= to_remove
+                            return
 
-                        if aname == "grcov" or unzip_artifact:
-                            unzip_file(filen, data_dir[aname], test_counter)
-                        else:
-                            move_file(filen, data_dir[aname], test_counter)
-                        taskid_to_file_map[task_id] = os.path.join(
-                            data_dir[aname], str(test_counter)
-                        )
-                        log("Finished %s for %s" % (task_id, test_name))
+                    for artifact in artifacts:
+                        aname = _pattern_match(artifact["name"], artifact_to_get)
+                        if aname:
+                            filen = download_artifact(task_id, artifact, downloads_dir)
+                            CURR_REQS -= to_remove
+
+                            if aname == "grcov" or unzip_artifact:
+                                unzip_file(filen, data_dir[aname], test_counter)
+                            else:
+                                move_file(filen, data_dir[aname], test_counter)
+                            taskid_to_file_map[task_id] = os.path.join(
+                                data_dir[aname], str(test_counter)
+                            )
+                            log("Finished %s for %s" % (task_id, test_name))
+                except Exception as e:
+                    log(e)
+                    CURR_REQS -= to_remove
+
+                return
+
 
             CURR_REQS += 1
             log(artifact_to_get)

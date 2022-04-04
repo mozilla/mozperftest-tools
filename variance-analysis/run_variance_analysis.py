@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import argparse
 import numpy as np
 import os
@@ -222,18 +224,16 @@ def main():
     # Download the artifacts for the base revision
     base_results = []
     for base_revision_id in base_revision_ids:
-        if not args.skip_download:
-            print(tests)
-            artifact_downloader(
-                base_revision_id,
-                output_dir=str(output_dir),
-                test_suites=tests,
-                platform=args.platform,
-                artifact_to_get=["perfherder-data"],
-                unzip_artifact=False,
-                download_failures=True,
-                ingest_continue=False,
-            )
+        artifact_downloader(
+            base_revision_id,
+            output_dir=str(output_dir),
+            test_suites=tests,
+            platform=args.platform,
+            artifact_to_get=["perfherder-data"],
+            unzip_artifact=False,
+            download_failures=True,
+            ingest_continue=args.skip_download,
+        )
 
         # Standardize the data
         file_group["task_group_id"] = base_revision_id
@@ -255,17 +255,16 @@ def main():
     # Download the artifacts for the new revision
     new_results = []
     for new_revision_id in new_revision_ids:
-        if not args.skip_download:
-            artifact_downloader(
-                new_revision_id,
-                output_dir=str(output_dir),
-                test_suites=tests,
-                platform=args.new_platform or args.platform,
-                artifact_to_get=["perfherder-data"],
-                unzip_artifact=False,
-                download_failures=True,
-                ingest_continue=False,
-            )
+        artifact_downloader(
+            new_revision_id,
+            output_dir=str(output_dir),
+            test_suites=tests,
+            platform=args.new_platform or args.platform,
+            artifact_to_get=["perfherder-data"],
+            unzip_artifact=False,
+            download_failures=True,
+            ingest_continue=args.skip_download,
+        )
 
         # Standardize the data
         file_group["task_group_id"] = new_revision_id
