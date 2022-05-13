@@ -155,6 +155,13 @@ def side_by_side_parser():
         default=False,
         help="Paths to visualmetrics.py for step chart generation.",
     )
+    parser.add_argument(
+        "--original",
+        action="store_true",
+        default=False,
+        help="If set, use the original videos in the side-by-side instead "
+        + "of the postprocessed videos."
+    )
     return parser
 
 
@@ -200,7 +207,7 @@ def find_task_group_id(revision, branch, search_crons=False):
     return task_group_ids
 
 
-def find_videos(artifact_dir):
+def find_videos(artifact_dir, original=False):
     # Find the cold/warm browsertime.json files
     cold_path = ""
     warm_path = ""
@@ -221,21 +228,25 @@ def find_videos(artifact_dir):
 
     return {
         "cold": [
-            str(pathlib.Path(cold_path.parents[0], file))
+            str(pathlib.Path(cold_path.parents[0], file)).replace(".mp4", "-original.mp4")
+            if original
+            else str(pathlib.Path(cold_path.parents[0], file))
             for file in cold_data[0]["files"]["video"]
         ],
         "warm": [
-            str(pathlib.Path(warm_path.parents[0], file))
+            str(pathlib.Path(warm_path.parents[0], file)).replace(".mp4", "-original.mp4")
+            if original
+            else str(pathlib.Path(warm_path.parents[0], file))
             for file in warm_data[0]["files"]["video"]
         ],
     }
 
 
-def find_videos_with_retriggers(artifact_dirs):
+def find_videos_with_retriggers(artifact_dirs, original=False):
     results = {"cold": [], "warm": []}
 
     for artifact_dir in artifact_dirs:
-        videos = find_videos(artifact_dir[0])
+        videos = find_videos(artifact_dir[0], original=original)
         results["cold"].extend(videos["cold"])
         results["warm"].extend(videos["warm"])
 
@@ -794,27 +805,13 @@ if __name__ == "__main__":
             base_paths = _search_for_paths([base_revision_id], "browsertime-results")
             base_vismet = _search_for_paths([base_revision_id], "perfherder-data")
 
-            # Get the vismet perfherder data now
-            artifact_downloader(
-                base_revision_id,
-                output_dir=str(output),
-                test_suites=[test_no_e10s],
-                platform=vismet_platform,
-                artifact_to_get=["perfherder-data"],
-                unzip_artifact=False,
-                download_failures=True,
-                ingest_continue=False,
-            )
-            vismet_paths = _search_for_paths([base_revision_id], "perfherder-data")
-
             base_vismet_taskids = []
-            for path in vismet_paths[0]:
+            for path in base_vismet[0]:
                 base_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
 
             base_vismet_mapping = match_vismets_with_videos(
                 base_revision_id, str(output), base_vismet_taskids
             )
-            base_vismet[0].extend(vismet_paths[0])
 
         new_paths = []
         for new_revision_id in new_revision_ids:
@@ -833,27 +830,13 @@ if __name__ == "__main__":
             new_paths = _search_for_paths([new_revision_id], "browsertime-results")
             new_vismet = _search_for_paths([new_revision_id], "perfherder-data")
 
-            # Get the vismet perfherder data now
-            artifact_downloader(
-                new_revision_id,
-                output_dir=str(output),
-                test_suites=[test_no_e10s],
-                platform=vismet_platform,
-                artifact_to_get=["perfherder-data"],
-                unzip_artifact=False,
-                download_failures=True,
-                ingest_continue=False,
-            )
-            vismet_paths = _search_for_paths([new_revision_id], "perfherder-data")
-
             new_vismet_taskids = []
-            for path in vismet_paths[0]:
+            for path in new_vismet[0]:
                 new_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
 
             new_vismet_mapping = match_vismets_with_videos(
                 new_revision_id, str(output), new_vismet_taskids
             )
-            new_vismet[0].extend(vismet_paths[0])
     else:
         base_paths = _search_for_paths(base_revision_ids, "browsertime-results")
         base_vismet = _search_for_paths(base_revision_ids, "perfherder-data")
@@ -872,8 +855,8 @@ if __name__ == "__main__":
         raise Exception(failure_msg % (args.new_revision, new_paths))
 
     # Gather the videos and split them between warm and cold
-    base_videos = find_videos_with_retriggers(base_paths)
-    new_videos = find_videos_with_retriggers(new_paths)
+    base_videos = find_videos_with_retriggers(base_paths, original=args.original)
+    new_videos = find_videos_with_retriggers(new_paths, original=args.original)
 
     # If we are looking at something other than similarity,
     # prepare the data for this (open, and split between
