@@ -799,7 +799,7 @@ if __name__ == "__main__":
                 platform=args.platform,
                 artifact_to_get=["browsertime-results", "perfherder-data"],
                 unzip_artifact=True,
-                download_failures=True,
+                download_failures=False,
                 ingest_continue=False,
             )
             base_paths = _search_for_paths([base_revision_id], "browsertime-results")
@@ -824,7 +824,7 @@ if __name__ == "__main__":
                 platform=args.new_platform or args.platform,
                 artifact_to_get=["browsertime-results", "perfherder-data"],
                 unzip_artifact=True,
-                download_failures=True,
+                download_failures=False,
                 ingest_continue=False,
             )
             new_paths = _search_for_paths([new_revision_id], "browsertime-results")
