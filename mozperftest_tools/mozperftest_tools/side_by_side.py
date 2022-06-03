@@ -636,7 +636,7 @@ class SideBySide:
                     platform=platform,
                     artifact_to_get=["browsertime-results", "perfherder-data"],
                     unzip_artifact=True,
-                    download_failures=True,
+                    download_failures=False,
                     ingest_continue=False,
                 )
                 base_paths = self._search_for_paths([base_revision_id], "browsertime-results")
@@ -661,7 +661,7 @@ class SideBySide:
                     platform=new_platform or platform,
                     artifact_to_get=["browsertime-results", "perfherder-data"],
                     unzip_artifact=True,
-                    download_failures=True,
+                    download_failures=False,
                     ingest_continue=False,
                 )
                 new_paths = self._search_for_paths([new_revision_id], "browsertime-results")

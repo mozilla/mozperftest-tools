@@ -359,6 +359,12 @@ def artifact_downloader(
             % (task["task"]["metadata"]["name"], test_name)
         )
 
+        if (
+            task.get("status", {}).get("state", "") in ("failed",)
+            and not download_failures
+        ):
+            log("Skipped failed task")
+            continue
         # If all tests weren't asked for but this test is
         # asked for, set the flag.
         if (not all_tasks) and test_name in test_suites:
