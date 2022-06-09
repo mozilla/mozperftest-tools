@@ -3,7 +3,7 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.1.0"
+PACKAGE_VERSION = "0.1.1"
 
 # dependencies
 deps = ["matplotlib", "opencv-python", "requests"]
