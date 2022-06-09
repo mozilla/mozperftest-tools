@@ -365,6 +365,7 @@ def artifact_downloader(
         ):
             log("Skipped failed task")
             continue
+            
         # If all tests weren't asked for but this test is
         # asked for, set the flag.
         if (not all_tasks) and test_name in test_suites:
