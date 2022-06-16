@@ -164,10 +164,11 @@ def organize_data(
         if "warm" in extras:
             pl_type = "warm"
 
-        if "fission" in extras:
-            variants += "fission-"
-        if "webrender" in extras:
-            variants += "webrender"
+        if app not in ("chrome", "chromium"):
+            if "fission" in extras:
+                variants += "fission-"
+            if "webrender" in extras:
+                variants += "webrender"
 
         # Newer data no longer has the nocondprof option
         if "nocondprof" in extras:
