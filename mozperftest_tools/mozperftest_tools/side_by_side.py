@@ -12,7 +12,6 @@ import json
 import shutil
 import subprocess
 
-from matplotlib import pyplot as plt
 from scipy.stats import spearmanr
 
 try:
@@ -68,6 +67,12 @@ class SideBySide:
 
     def generate_step_chart(self, oldvid, newvid, vismetPath, prefix, metric, output):
         print("Generating step chart for %s" % metric)
+
+        try:
+            from matplotlib import pyplot as plt
+        except Exception:
+            print("Please install matplotlib before using step charts")
+            raise
 
         oldvid_metrics = json.loads(
             subprocess.check_output(
@@ -339,6 +344,12 @@ class SideBySide:
         Returns:
             A dictionary containing the worst pairing and the 3D similarity score.
         """
+
+        try:
+            from matplotlib import pyplot as plt
+        except Exception:
+            print("Please install matplotlib before using the similarity metric")
+            raise
 
         def _get_frames(video):
             """Gets all frames from a video into a list."""
