@@ -22,10 +22,10 @@ except ImportError:
     from urllib import urlencode, urlretrieve
     from urllib2 import urlopen
 
-from utils.artifact_downloader import artifact_downloader
-from utils.task_processor import get_task_data_paths, match_vismets_with_videos, sorted_nicely
+from mozperftest_tools.utils.artifact_downloader import artifact_downloader
+from mozperftest_tools.utils.task_processor import get_task_data_paths, match_vismets_with_videos, sorted_nicely
 
-from utils.utils import write_same_line, finish_same_line, find_task_group_id
+from mozperftest_tools.utils.utils import write_same_line, finish_same_line, find_task_group_id
 
 
 class SideBySide:
@@ -298,10 +298,12 @@ class SideBySide:
         filt_new_vids = sorted_nicely([vid for vid in new_videos if new_btime_id in vid])
 
         oldvid = base_videos[base_min_idx]
+        oldvid = oldvid.replace("\\", "/")
         oldvidnewpath = str(pathlib.Path(output, "%sold_video.mp4" % prefix))
         shutil.copyfile(oldvid, oldvidnewpath)
 
         newvid = new_videos[new_min_idx]
+        newvid = newvid.replace("\\", "/")
         newvidnewpath = str(pathlib.Path(output, "%snew_video.mp4" % prefix))
         shutil.copyfile(newvid, newvidnewpath)
 
