@@ -3,10 +3,10 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.1.1"
+PACKAGE_VERSION = "0.1.3"
 
 # dependencies
-deps = ["matplotlib", "opencv-python", "requests"]
+deps = ["opencv-python", "requests"]
 if sys.version_info <= (3, 7):
     # With versions <=3.7, we need to explicitly set
     # the max version or else pip will try to get the
