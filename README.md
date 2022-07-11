@@ -180,6 +180,27 @@ optional arguments:
                         will default to side-by-side.mp4.
 ```
 
+## General Side-by-Side Video Comparisons
+
+The `generate_side_by_side_standalone.py` script can be used to generate a side-by-side comparion of any two videos (regardles of if they are browsertime or not). This comes with the ability to remove orange frames if necessary.
+```
+$ python3 generate_side_by_side_standalone.py --help
+usage: You can use this tool to make arbitrary side-by-side videos of any combination of videos. Use --remove-orange if you are comparing browsertime videos with orange frames (note that this requires matplotlib). 
+       [-h] --base-video BASE_VIDEO [--new-video NEW_VIDEO] [--remove-orange]
+       [--output OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --base-video BASE_VIDEO
+                        The path to the base/before video.
+  --new-video NEW_VIDEO
+                        The path to the new/after video.
+  --remove-orange       If set, orange frames are removed.
+  --output OUTPUT       This is where the data will be saved. Defaults to CWD.
+                        You can include a name for the file here, otherwise it
+                        will default to side-by-side.mp4.
+```
+
 ## Other tools
 
 There are other useful tools in this repo as well. For instance, the `high-value-tests` folder contains logic for determining the what tests are the most valuable given a set of alerts and also produces a minimized list of tests that could catch all alerts.
