@@ -166,7 +166,7 @@ def get_tasks_in_group(group_id):
 def download_artifact(task_id, artifact, output_dir):
     global FAILED
 
-    fname = os.path.join(output_dir, task_id + "_" + os.path.basename(artifact["name"]))
+    fname = os.path.join(output_dir, task_id + "|" + os.path.basename(artifact["name"]))
     log("Downloading " + artifact["name"] + " to: " + fname)
     if os.path.exists(fname):
         log("File already exists.")
@@ -240,11 +240,11 @@ def unzip_file(abs_zip_path, output_dir, count=0):
         with zipfile.ZipFile(abs_zip_path, "r") as z:
             z.extractall(tmp_path)
     else:
-        task_id = os.path.split(abs_zip_path)[1].split("_")[0]
+        task_id = os.path.split(abs_zip_path)[1].split("|")[0]
         extract_tgz(abs_zip_path, tmp_path)
         os.rename(
             os.path.join(tmp_path, "browsertime-results"),
-            os.path.join(tmp_path, task_id + "_browsertime-results"),
+            os.path.join(tmp_path, task_id + "|browsertime-results"),
         )
     return tmp_path
 

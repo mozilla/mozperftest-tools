@@ -160,7 +160,13 @@ def side_by_side_parser():
         action="store_true",
         default=False,
         help="If set, use the original videos in the side-by-side instead "
-        + "of the postprocessed videos."
+        + "of the postprocessed videos.",
+    )
+    parser.add_argument(
+        "--skip-slow-gif",
+        action="store_true",
+        default=False,
+        help="If set, the slow-motion GIFs won't be produced.",
     )
     return parser
 
@@ -228,13 +234,17 @@ def find_videos(artifact_dir, original=False):
 
     return {
         "cold": [
-            str(pathlib.Path(cold_path.parents[0], file)).replace(".mp4", "-original.mp4")
+            str(pathlib.Path(cold_path.parents[0], file)).replace(
+                ".mp4", "-original.mp4"
+            )
             if original
             else str(pathlib.Path(cold_path.parents[0], file))
             for file in cold_data[0]["files"]["video"]
         ],
         "warm": [
-            str(pathlib.Path(warm_path.parents[0], file)).replace(".mp4", "-original.mp4")
+            str(pathlib.Path(warm_path.parents[0], file)).replace(
+                ".mp4", "-original.mp4"
+            )
             if original
             else str(pathlib.Path(warm_path.parents[0], file))
             for file in warm_data[0]["files"]["video"]
@@ -246,7 +256,7 @@ def find_videos_with_retriggers(artifact_dirs, original=False):
     results = {"cold": [], "warm": []}
 
     for artifact_dir in artifact_dirs:
-        videos = find_videos(artifact_dir[0], original=original)
+        videos = find_videos(artifact_dir, original=original)
         results["cold"].extend(videos["cold"])
         results["warm"].extend(videos["warm"])
 
@@ -390,23 +400,15 @@ def find_lowest_similarity(base_videos, new_videos, output, prefix, most_similar
     )
 
 
-def open_and_organize_perfherder(files, vismet_mappings, metric):
+def open_and_organize_perfherder(files, metric):
     def _open_perfherder(filen):
         with open(filen) as f:
             return json.load(f)
 
     res = {"cold": [], "warm": []}
 
-    for filen in files[0]:
+    for filen in files:
         data = _open_perfherder(filen)
-
-        vismet_id = ""
-        btime_id = ""
-        for v_id, t_id in vismet_mappings.items():
-            if v_id in filen[0]:
-                vismet_id = v_id
-                btime_id = t_id
-                break
 
         for suite in data["suites"]:
             pl_type = "warm"
@@ -416,8 +418,6 @@ def open_and_organize_perfherder(files, vismet_mappings, metric):
             for subtest in suite["subtests"]:
                 if subtest["name"].lower() != metric.lower():
                     continue
-                subtest["vismet_id"] = vismet_id
-                subtest["btime_id"] = btime_id
                 # Each entry here will be a single retrigger of
                 # the test for the requested metric (ordered
                 # based on the `files` ordering)
@@ -504,57 +504,51 @@ def find_closest_videos(
 ):
     base_btime_id = ""
     base_min_idx = None
+
+    # Recalculate median for all values, then find the new video
+    # by searching in the list for it (use index) to determine
+    # the matching video.
+    replicates = []
     for retrigger in base_vismet:
-        # Find the video which most closely matches the average
-        diff = [
-            abs(retrigger["replicates"][i] - retrigger["value"])
-            for i in range(0, len(retrigger["replicates"]))
-        ]
-        new_min = min(diff)
-        if not base_min_idx or new_min < base_min_diff:
-            base_min_diff = new_min
-            base_min_idx = diff.index(base_min_diff)
-            base_btime_id = retrigger["btime_id"]
+        replicates.extend(retrigger["replicates"])
+    median_value = np.median(replicates)
+
+    # Find the video which most closely matches the average
+    diff = [abs(replicate - median_value) for replicate in replicates]
+    min_diff = min(diff)
+    base_min_idx = diff.index(min_diff)
 
     print(
         "BASE: metric=%s prefix=%s mean=%d closest=%d index=%d"
         % (
             metric,
             prefix,
-            retrigger["value"],
-            retrigger["replicates"][base_min_idx],
+            median_value,
+            min_diff,
             base_min_idx,
         )
     )
 
-    new_btime_id = ""
-    new_min_idx = None
+    replicates = []
     for retrigger in new_vismet:
-        # Find the video which most closely matches the average
-        diff = [
-            abs(retrigger["replicates"][i] - retrigger["value"])
-            for i in range(0, len(retrigger["replicates"]))
-        ]
-        new_min = min(diff)
-        if not new_min_idx or new_min < new_min_diff:
-            new_min_diff = new_min
-            new_min_idx = diff.index(new_min_diff)
-            new_btime_id = retrigger["btime_id"]
+        replicates.extend(retrigger["replicates"])
+    median_value = np.median(replicates)
+
+    # Find the video which most closely matches the average
+    diff = [abs(replicate - median_value) for replicate in replicates]
+    min_diff = min(diff)
+    new_min_idx = diff.index(min_diff)
 
     print(
         "NEW: metric=%s prefix=%s mean=%d closest=%d index=%d"
         % (
             metric,
             prefix,
-            retrigger["value"],
-            retrigger["replicates"][new_min_idx],
+            median_value,
+            min_diff,
             new_min_idx,
         )
     )
-
-    # Filter out all videos which are unrelated to the current task (retrigger)
-    filt_base_vids = sorted_nicely([vid for vid in base_videos if base_btime_id in vid])
-    filt_new_vids = sorted_nicely([vid for vid in new_videos if new_btime_id in vid])
 
     oldvid = base_videos[base_min_idx]
     oldvidnewpath = str(pathlib.Path(output, "%sold_video.mp4" % prefix))
@@ -670,6 +664,7 @@ def build_side_by_side(base_video, new_video, base_ind, new_ind, output_dir, fil
         + [str(pathlib.Path(output_dir, filename))]
     )
 
+
 def convert_mp4_to_gif(path_to_mp4, path_to_gif, slow_motion=False):
     path_to_gif = str(path_to_gif)
     fps = 30
@@ -708,6 +703,7 @@ def convert_mp4_to_gif(path_to_mp4, path_to_gif, slow_motion=False):
     subprocess.check_output(["rm", path_to_gif.replace(".gif", "-palette.gif")])
 
     return str(path_to_gif)
+
 
 if __name__ == "__main__":
     args = side_by_side_parser().parse_args()
@@ -776,10 +772,11 @@ if __name__ == "__main__":
         for rev_id in rev_ids:
             if found_paths:
                 break
-            # Get the paths to the directory holding the artifacts
+            # Get the paths to the directory holding the artifacts, the 0
+            # index is because we are only looking at one suite here.
             found_paths = list(
                 get_task_data_paths(rev_id, str(output), artifact=artifact).values()
-            )
+            )[0]
         return found_paths
 
     # Setup the vismet version of the platform and test names
@@ -805,14 +802,6 @@ if __name__ == "__main__":
             base_paths = _search_for_paths([base_revision_id], "browsertime-results")
             base_vismet = _search_for_paths([base_revision_id], "perfherder-data")
 
-            base_vismet_taskids = []
-            for path in base_vismet[0]:
-                base_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
-
-            base_vismet_mapping = match_vismets_with_videos(
-                base_revision_id, str(output), base_vismet_taskids
-            )
-
         new_paths = []
         for new_revision_id in new_revision_ids:
             if new_paths:
@@ -829,14 +818,6 @@ if __name__ == "__main__":
             )
             new_paths = _search_for_paths([new_revision_id], "browsertime-results")
             new_vismet = _search_for_paths([new_revision_id], "perfherder-data")
-
-            new_vismet_taskids = []
-            for path in new_vismet[0]:
-                new_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
-
-            new_vismet_mapping = match_vismets_with_videos(
-                new_revision_id, str(output), new_vismet_taskids
-            )
     else:
         base_paths = _search_for_paths(base_revision_ids, "browsertime-results")
         base_vismet = _search_for_paths(base_revision_ids, "perfherder-data")
@@ -863,12 +844,8 @@ if __name__ == "__main__":
     # cold and warm)
     if args.metric != "similarity":
         print("Opening, and organizing perfherder data...")
-        org_base_vismet = open_and_organize_perfherder(
-            base_vismet, base_vismet_mapping, args.metric
-        )
-        org_new_vismet = open_and_organize_perfherder(
-            new_vismet, new_vismet_mapping, args.metric
-        )
+        org_base_vismet = open_and_organize_perfherder(base_vismet, args.metric)
+        org_new_vismet = open_and_organize_perfherder(new_vismet, args.metric)
 
         if (not org_new_vismet["cold"] and not org_new_vismet["warm"]) or (
             not org_base_vismet["cold"] and not org_base_vismet["warm"]
@@ -938,19 +915,23 @@ if __name__ == "__main__":
         )
         print("Successfully built a side-by-side cold comparison: %s" % output_name)
 
-        gif_output_name = pathlib.Path(output, "cold-" + filename.replace(".mp4", ".gif"))
-        gif_output_name = convert_mp4_to_gif(
-            output_name,
-            gif_output_name
+        gif_output_name = pathlib.Path(
+            output, "cold-" + filename.replace(".mp4", ".gif")
         )
-        print("Successfully converted the side-by-side cold comparison to gif: %s" % gif_output_name)
+        gif_output_name = convert_mp4_to_gif(output_name, gif_output_name)
+        print(
+            "Successfully converted the side-by-side cold comparison to gif: %s"
+            % gif_output_name
+        )
 
-        gif_output_name = convert_mp4_to_gif(
-            output_name,
-            gif_output_name,
-            slow_motion=True
-        )
-        print("Successfully converted the side-by-side cold comparison to slow motion gif: %s" % gif_output_name)
+        if not args.skip_slow_gif:
+            gif_output_name = convert_mp4_to_gif(
+                output_name, gif_output_name, slow_motion=True
+            )
+            print(
+                "Successfully converted the side-by-side cold comparison to slow motion gif: %s"
+                % gif_output_name
+            )
     if run_warm:
         output_name = str(pathlib.Path(output, "warm-" + filename))
         build_side_by_side(
@@ -963,16 +944,20 @@ if __name__ == "__main__":
         )
         print("Successfully built a side-by-side warm comparison: %s" % output_name)
 
-        gif_output_name = pathlib.Path(output, "warm-" + filename.replace(".mp4", ".gif"))
-        gif_output_name = convert_mp4_to_gif(
-            output_name,
-            gif_output_name
+        gif_output_name = pathlib.Path(
+            output, "warm-" + filename.replace(".mp4", ".gif")
         )
-        print("Successfully converted the side-by-side warm comparison to gif: %s" % gif_output_name)
+        gif_output_name = convert_mp4_to_gif(output_name, gif_output_name)
+        print(
+            "Successfully converted the side-by-side warm comparison to gif: %s"
+            % gif_output_name
+        )
 
-        gif_output_name = convert_mp4_to_gif(
-            output_name,
-            gif_output_name,
-            slow_motion=True
-        )
-        print("Successfully converted the side-by-side warm comparison to slow motion gif: %s" % gif_output_name)
+        if not args.skip_slow_gif:
+            gif_output_name = convert_mp4_to_gif(
+                output_name, gif_output_name, slow_motion=True
+            )
+            print(
+                "Successfully converted the side-by-side warm comparison to slow motion gif: %s"
+                % gif_output_name
+            )
