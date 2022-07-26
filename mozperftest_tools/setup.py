@@ -3,7 +3,7 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.1.3"
+PACKAGE_VERSION = "0.1.9"
 
 # dependencies
 deps = ["opencv-python", "requests"]

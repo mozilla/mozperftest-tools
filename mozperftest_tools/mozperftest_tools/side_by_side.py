@@ -148,17 +148,18 @@ class SideBySide:
         for rev_id in rev_ids:
             if found_paths:
                 break
-            # Get the paths to the directory holding the artifacts
+            # Get the paths to the directory holding the artifacts, the 0
+            # index is because we are only looking at one suite here.
             found_paths = list(
                 get_task_data_paths(rev_id, str(self._output_dir), artifact=artifact).values()
-            )
+            )[0]
         return found_paths
 
     def _find_videos_with_retriggers(self, artifact_dirs, original=False):
         results = {"cold": [], "warm": []}
 
         for artifact_dir in artifact_dirs:
-            videos = self._find_videos(artifact_dir[0], original=original)
+            videos = self._find_videos(artifact_dir, original=original)
             results["cold"].extend(videos["cold"])
             results["warm"].extend(videos["warm"])
 
@@ -198,23 +199,15 @@ class SideBySide:
             ],
         }
 
-    def _open_and_organize_perfherder(self, files, vismet_mappings, metric):
+    def _open_and_organize_perfherder(self, files, metric):
         def _open_perfherder(filen):
             with open(filen) as f:
                 return json.load(f)
 
         res = {"cold": [], "warm": []}
 
-        for filen in files[0]:
+        for filen in files:
             data = _open_perfherder(filen)
-
-            vismet_id = ""
-            btime_id = ""
-            for v_id, t_id in vismet_mappings.items():
-                if v_id in filen[0]:
-                    vismet_id = v_id
-                    btime_id = t_id
-                    break
 
             for suite in data["suites"]:
                 pl_type = "warm"
@@ -224,8 +217,6 @@ class SideBySide:
                 for subtest in suite["subtests"]:
                     if subtest["name"].lower() != metric.lower():
                         continue
-                    subtest["vismet_id"] = vismet_id
-                    subtest["btime_id"] = btime_id
                     # Each entry here will be a single retrigger of
                     # the test for the requested metric (ordered
                     # based on the `files` ordering)
@@ -250,57 +241,51 @@ class SideBySide:
     ):
         base_btime_id = ""
         base_min_idx = None
+
+        # Recalculate median for all values, then find the new video
+        # by searching in the list for it (use index) to determine
+        # the matching video.
+        replicates = []
         for retrigger in base_vismet:
-            # Find the video which most closely matches the average
-            diff = [
-                abs(retrigger["replicates"][i] - retrigger["value"])
-                for i in range(0, len(retrigger["replicates"]))
-            ]
-            new_min = min(diff)
-            if not base_min_idx or new_min < base_min_diff:
-                base_min_diff = new_min
-                base_min_idx = diff.index(base_min_diff)
-                base_btime_id = retrigger["btime_id"]
+            replicates.extend(retrigger["replicates"])
+        median_value = np.median(replicates)
+
+        # Find the video which most closely matches the average
+        diff = [abs(replicate - median_value) for replicate in replicates]
+        min_diff = min(diff)
+        base_min_idx = diff.index(min_diff)
 
         print(
             "BASE: metric=%s prefix=%s mean=%d closest=%d index=%d"
             % (
                 metric,
                 prefix,
-                retrigger["value"],
-                retrigger["replicates"][base_min_idx],
+                median_value,
+                min_diff,
                 base_min_idx,
             )
         )
 
-        new_btime_id = ""
-        new_min_idx = None
+        replicates = []
         for retrigger in new_vismet:
-            # Find the video which most closely matches the average
-            diff = [
-                abs(retrigger["replicates"][i] - retrigger["value"])
-                for i in range(0, len(retrigger["replicates"]))
-            ]
-            new_min = min(diff)
-            if not new_min_idx or new_min < new_min_diff:
-                new_min_diff = new_min
-                new_min_idx = diff.index(new_min_diff)
-                new_btime_id = retrigger["btime_id"]
+            replicates.extend(retrigger["replicates"])
+        median_value = np.median(replicates)
+
+        # Find the video which most closely matches the average
+        diff = [abs(replicate - median_value) for replicate in replicates]
+        min_diff = min(diff)
+        new_min_idx = diff.index(min_diff)
 
         print(
             "NEW: metric=%s prefix=%s mean=%d closest=%d index=%d"
             % (
                 metric,
                 prefix,
-                retrigger["value"],
-                retrigger["replicates"][new_min_idx],
+                median_value,
+                min_diff,
                 new_min_idx,
             )
         )
-
-        # Filter out all videos which are unrelated to the current task (retrigger)
-        filt_base_vids = sorted_nicely([vid for vid in base_videos if base_btime_id in vid])
-        filt_new_vids = sorted_nicely([vid for vid in new_videos if new_btime_id in vid])
 
         oldvid = base_videos[base_min_idx]
         oldvid = oldvid.replace("\\", "/")
@@ -453,7 +438,6 @@ class SideBySide:
             "newvid_ind": new_orange_frameinds[inds[1]],
         }
 
-
     def clean_videos(self, videos=[]):
         for v in videos:
             if v.exists():
@@ -467,6 +451,10 @@ class SideBySide:
         )
         self.clean_videos(videos=[pathlib.Path(self._output_dir, base_video)])
 
+    # Recalculate median for all values, then find the new video
+    # by searching in the list for it (use index) to determine
+    # the matching video.
+    replicates = []
     def resample(self, cut_vid, rs_vid):
         self.clean_videos(videos=[rs_vid])
         subprocess.check_output(
@@ -546,7 +534,6 @@ class SideBySide:
 
         return str(path_to_gif)
 
-
     def build_side_by_side(self, base_video, new_video, base_ind, new_ind, filename):
         # Cut the videos
         self.cut(base_video, self._vid_paths["before_cut_vid"], base_ind)
@@ -561,7 +548,7 @@ class SideBySide:
         self.filter_complex(self._vid_paths["after_rs_vid"], self._vid_paths["after_vid"], "AFTER")
         self.generate(self._vid_paths["before_vid"], self._vid_paths["after_vid"], filename)
 
-    def run(self, test_name="", new_test_name="", platform="", new_platform="", vismetPath="", metric="speedindex", base_branch="autoland", new_branch="autoland", base_revision="", new_revision="", cold="", warm="", most_similar="", original=False, search_crons=False, overwrite=True, skip_download=False):
+    def run(self, test_name="", new_test_name="", platform="", new_platform="", vismetPath="", metric="speedindex", base_branch="autoland", new_branch="autoland", base_revision="", new_revision="", cold="", warm="", most_similar="", original=False, search_crons=False, overwrite=True, skip_download=False, skip_slow_gif=False):
         '''
         This method is the main method of the class and uses all other methods to make the actual side-by-side comparison.
 
@@ -655,14 +642,6 @@ class SideBySide:
                 base_paths = self._search_for_paths([base_revision_id], "browsertime-results")
                 base_vismet = self._search_for_paths([base_revision_id], "perfherder-data")
 
-                base_vismet_taskids = []
-                for path in base_vismet[0]:
-                    base_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
-
-                base_vismet_mapping = match_vismets_with_videos(
-                    base_revision_id, str(output), base_vismet_taskids
-                )
-
             new_paths = []
             for new_revision_id in new_revision_ids:
                 if new_paths:
@@ -679,14 +658,6 @@ class SideBySide:
                 )
                 new_paths = self._search_for_paths([new_revision_id], "browsertime-results")
                 new_vismet = self._search_for_paths([new_revision_id], "perfherder-data")
-
-                new_vismet_taskids = []
-                for path in new_vismet[0]:
-                    new_vismet_taskids.append(os.path.split(path)[1].split("_")[0])
-
-                new_vismet_mapping = match_vismets_with_videos(
-                    new_revision_id, str(output), new_vismet_taskids
-                )
         else:
             base_paths = self._search_for_paths(base_revision_ids, "browsertime-results")
             base_vismet = self._search_for_paths(base_revision_ids, "perfherder-data")
@@ -713,12 +684,8 @@ class SideBySide:
         # cold and warm)
         if metric != "similarity":
             print("Opening, and organizing perfherder data...")
-            org_base_vismet = self._open_and_organize_perfherder(
-                base_vismet, base_vismet_mapping, metric
-            )
-            org_new_vismet = self._open_and_organize_perfherder(
-                new_vismet, new_vismet_mapping, metric
-            )
+            org_base_vismet = self._open_and_organize_perfherder(base_vismet, metric)
+            org_new_vismet = self._open_and_organize_perfherder(new_vismet, metric)
 
             if (not org_new_vismet["cold"] and not org_new_vismet["warm"]) or (
                 not org_base_vismet["cold"] and not org_base_vismet["warm"]
@@ -789,20 +756,25 @@ class SideBySide:
             )
             print("Successfully built a side-by-side cold comparison: %s" % output_name)
 
-            gif_output_name = pathlib.Path(output, "cold-" + filename.replace(".mp4", ".gif"))
-            gif_output_name = self.convert_to_gif(
-                output_name,
-                gif_output_name
+            gif_output_name = pathlib.Path(
+                output, "cold-" + filename.replace(".mp4", ".gif")
             )
-            print("Successfully converted the side-by-side cold comparison to gif: %s" % gif_output_name)
-
-            gif_output_name = self.convert_to_gif(
-                output_name,
-                gif_output_name,
-                slow_motion=True
+            gif_output_name = self.convert_to_gif(output_name, gif_output_name)
+            print(
+                "Successfully converted the side-by-side cold comparison to gif: %s"
+                % gif_output_name
             )
             print(
                 "Successfully converted the side-by-side cold comparison to slow motion gif: %s" % gif_output_name)
+
+            if not skip_slow_gif:
+                gif_output_name = self.convert_to_gif(
+                    output_name, gif_output_name, slow_motion=True
+                )
+                print(
+                    "Successfully converted the side-by-side cold comparison to slow motion gif: %s"
+                    % gif_output_name
+                )
         if run_warm:
             output_name = str(pathlib.Path(output, "warm-" + filename))
             self.build_side_by_side(
@@ -814,17 +786,20 @@ class SideBySide:
             )
             print("Successfully built a side-by-side warm comparison: %s" % output_name)
 
-            gif_output_name = pathlib.Path(output, "warm-" + filename.replace(".mp4", ".gif"))
-            gif_output_name = self.convert_to_gif(
-                output_name,
-                gif_output_name
+            gif_output_name = pathlib.Path(
+                output, "warm-" + filename.replace(".mp4", ".gif")
             )
-            print("Successfully converted the side-by-side warm comparison to gif: %s" % gif_output_name)
-
-            gif_output_name = self.convert_to_gif(
-                output_name,
-                gif_output_name,
-                slow_motion=True
-            )
+            gif_output_name = self.convert_to_gif(output_name, gif_output_name)
             print(
-                "Successfully converted the side-by-side warm comparison to slow motion gif: %s" % gif_output_name)
+                "Successfully converted the side-by-side warm comparison to gif: %s"
+                % gif_output_name
+            )
+
+            if not skip_slow_gif:
+                gif_output_name = self.convert_to_gif(
+                    output_name, gif_output_name, slow_motion=True
+                )
+                print(
+                    "Successfully converted the side-by-side warm comparison to slow motion gif: %s"
+                    % gif_output_name
+                )
