@@ -34,6 +34,17 @@ class ProfileEnhancer:
 
         return gecko_main, start_time
 
+    def get_test_category(self, data_after):
+        """Finds, and returns the index of the Test category."""
+        for i, cat in enumerate(data_after["meta"]["categories"]):
+            if cat["name"].lower() == "test":
+                return i
+        raise Exception("Could not find the test category in the given profile.")
+
+    def insert_into_string_table(self, gecko_main):
+        gecko_main["stringTable"].append("Performance Changes Detected (from ProfileEnhancer)")
+        return len(gecko_main["stringTable"]) - 1
+
     def detect_changes(self, vismet_before_ns, vismet_after_ns, threshold=5):
         """Returns the changes (improvements, AND regressions) found.
 
@@ -173,6 +184,8 @@ class ProfileEnhancer:
         )
 
         # Insert the change markers into the after profile
+        perfchange_name_ind = self.insert_into_string_table(gecko_main)
+        test_cat_ind = self.get_test_category(data_after)
         diff = start_time - data_after["meta"]["startTime"]
         for prog_type, changes in [
             ("PerceptualSpeedIndex", psi_changes),
@@ -183,11 +196,11 @@ class ProfileEnhancer:
                 print(f"{prog_type}: {change}")
                 gecko_main["markers"]["data"].append(
                     [
-                        0,
+                        perfchange_name_ind,
                         change["start"] - diff,
                         change["end"] - diff,
                         1,
-                        0,
+                        test_cat_ind,
                         {
                             "type": "Task",
                             "name": f"{prog_type} - {change['type']}",
