@@ -170,10 +170,11 @@ class SideBySide:
         cold_path = ""
         warm_path = ""
         for path in pathlib.Path(artifact_dir).rglob("*-browsertime.json"):
-            if "cold" in str(path):
-                cold_path = path
-            elif "warm" in str(path):
-                warm_path = path
+            if "profiling" not in path.parts:
+                if "cold" in str(path):
+                    cold_path = path
+                elif "warm" in str(path):
+                    warm_path = path
         if not cold_path:
             raise Exception("Cannot find a browsertime.json file for the cold pageloads.")
         if not warm_path:
