@@ -152,7 +152,11 @@ class SideBySide:
             # index is because we are only looking at one suite here.
             found_paths = list(
                 get_task_data_paths(rev_id, str(self._output_dir), artifact=artifact).values()
-            )[0]
+            )
+            if len(found_paths) > 0:
+                found_paths = found_paths[0]
+            else:
+                found_paths = []
         return found_paths
 
     def _find_videos_with_retriggers(self, artifact_dirs, original=False):
