@@ -172,16 +172,19 @@ class ProfileEnhancer:
             vismets_before.get("PerceptualSpeedIndexProgress", []),
             vismets_after.get("PerceptualSpeedIndexProgress", [])
         )
+        print(psi_changes)
 
         csi_changes = self.detect_changes(
             vismets_before.get("ContentfulSpeedIndexProgress", []),
             vismets_after.get("ContentfulSpeedIndexProgress", [])
         )
+        print(csi_changes)
 
         si_changes = self.detect_changes(
             vismets_before.get("VisualProgress", []),
             vismets_after.get("VisualProgress", [])
         )
+        print(si_changes)
 
         # Insert the change markers into the after profile
         perfchange_name_ind = self.insert_into_string_table(gecko_main)
@@ -211,5 +214,7 @@ class ProfileEnhancer:
         # Save the data
         profile_after_name = profile_after.name.split(".")[0]
         res = pathlib.Path(self.output_dir, f"{profile_after_name}-enhanced.json.gz")
+
+        print(f"Saving enhanced profile to {str(res.resolve())}")
         with res.open("w") as f:
             json.dump(data_after, f)
