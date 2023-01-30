@@ -14,7 +14,11 @@ from moz_measure_noise import step_detector
 
 from mozperftest_tools.side_by_side import SideBySide
 from mozperftest_tools.utils.artifact_downloader import artifact_downloader
-from mozperftest_tools.utils.task_processor import get_task_data_paths, match_vismets_with_videos, sorted_nicely
+from mozperftest_tools.utils.task_processor import (
+    get_task_data_paths,
+    match_vismets_with_videos,
+    sorted_nicely,
+)
 from mozperftest_tools.utils.utils import (
     finish_same_line,
     find_task_group_id,
@@ -36,21 +40,25 @@ MAX_WINDOW = 1
 
 class MethodNotFoundError(Exception):
     """Raised when a specified detection method is not found."""
+
     pass
 
 
 class ZeroDepthError(Exception):
     """Raised when the auto-computed depth is zero."""
+
     pass
 
 
 class BranchMismatchError(Exception):
     """Raised when branches do not match."""
+
     pass
 
 
 class NoDataError(Exception):
     """Raised when we can't find enough data."""
+
     pass
 
 
@@ -115,7 +123,9 @@ class RegressionDetector(SideBySide):
                     # Each entry here will be a single retrigger of
                     # the test for the requested metric (ordered
                     # based on the `files` ordering)
-                    res[pl_type].setdefault(subtest["name"], []).extend(subtest["replicates"])
+                    res[pl_type].setdefault(subtest["name"], []).extend(
+                        subtest["replicates"]
+                    )
 
         return res
 
@@ -134,7 +144,7 @@ class RegressionDetector(SideBySide):
         overwrite=True,
         skip_download=False,
     ):
-        '''
+        """
         This method is the main method of the class and uses all other methods to make the actual side-by-side comparison.
 
         :param test_name: The name of the test task to get videos from.
@@ -155,7 +165,7 @@ class RegressionDetector(SideBySide):
         :param skip_download: If set, we won't try to download artifacts again and we'll try using what already exists in the output folder.
         :param original: If set, use the original videos in the side-by-side instead of the postprocessed videos.
         :return:
-        '''
+        """
         # Parse the given output argument
         output = pathlib.Path(self._output_dir)
         if not output.suffixes:
@@ -172,7 +182,7 @@ class RegressionDetector(SideBySide):
 
         revisions = [
             (base_revision, base_branch, test_name, platform),
-            (new_revision, new_branch, new_test_name, new_platform)
+            (new_revision, new_branch, new_test_name, new_platform),
         ]
         if depth is not None:
             if base_branch != new_branch:
@@ -184,24 +194,18 @@ class RegressionDetector(SideBySide):
                 base_revision, new_revision, base_branch, depth
             )
 
-            revisions = list(zip(
-                push_revisions,
-                [base_branch] * len(push_revisions),
-                [test_name] * len(push_revisions),
-                [platform] * len(push_revisions),
-            ))
+            revisions = list(
+                zip(
+                    push_revisions,
+                    [base_branch] * len(push_revisions),
+                    [test_name] * len(push_revisions),
+                    [platform] * len(push_revisions),
+                )
+            )
 
-        return self.compare_revisions(
-            revisions, output, overwrite, skip_download
-        )
+        return self.compare_revisions(revisions, output, overwrite, skip_download)
 
-    def compare_revisions(
-        self,
-        revisions,
-        output,
-        overwrite,
-        skip_download
-    ):
+    def compare_revisions(self, revisions, output, overwrite, skip_download):
         """Compare multiple revisions together.
 
         Revisions must be ordered with the oldest first (base),
@@ -211,9 +215,10 @@ class RegressionDetector(SideBySide):
         # Get the task group IDs for the revisions
         all_revision_ids = []
         for (revision, branch, _, _) in revisions:
-            print("walewalhlhelhewalh")
             all_revision_ids.append(
-                find_task_group_id(revision, branch, search_crons=True, cache=self._cache)
+                find_task_group_id(
+                    revision, branch, search_crons=True, cache=self._cache
+                )
             )
 
         all_revision_dirs = [
@@ -255,7 +260,9 @@ class RegressionDetector(SideBySide):
                         ingest_continue=False,
                     )
                     try:
-                        data_paths = self._search_for_paths([revision_id], "perfherder-data")
+                        data_paths = self._search_for_paths(
+                            [revision_id], "perfherder-data"
+                        )
                     except (AttributeError, FileNotFoundError) as e:
                         print("No data was found for revision %s" % revision)
                         data_paths = []
@@ -266,10 +273,12 @@ class RegressionDetector(SideBySide):
         if len([paths for paths in all_revision_data_paths if paths]) < 2:
             print("All paths found: %s" % all_revision_data_paths)
             raise NoDataError("Not enough artifacts downloaded, can't compare! ")
-        
+
         all_revision_data = []
         for revision_data_paths in all_revision_data_paths:
-            all_revision_data.append(self._open_and_organize_perfherder(revision_data_paths))
+            all_revision_data.append(
+                self._open_and_organize_perfherder(revision_data_paths)
+            )
 
         # We have all the data downloaded, now organize it into lists or metrics
         # and detect any changes.
@@ -290,25 +299,29 @@ class RegressionDetector(SideBySide):
                         # This metric doesn't exist in one, or more revisions but
                         # other metrics do exist
                         print(
-                            "Missing data for metric %s, found %s, expected %s" %
-                            (metric, all_metric_names[pl_type][metric], all_revision_data)
+                            "Missing data for metric %s, found %s, expected %s"
+                            % (
+                                metric,
+                                all_metric_names[pl_type][metric],
+                                all_revision_data,
+                            )
                         )
                         continue
 
                     if use_step_detector:
-                        data_org_by_metric[pl_type].setdefault(
-                            metric, []
-                        ).extend(data[pl_type][metric])
-                        revisions_org_by_metric[pl_type].setdefault(
-                            metric, []
-                        ).extend([new_revisions[i]] * len(data[pl_type][metric]))
+                        data_org_by_metric[pl_type].setdefault(metric, []).extend(
+                            data[pl_type][metric]
+                        )
+                        revisions_org_by_metric[pl_type].setdefault(metric, []).extend(
+                            [new_revisions[i]] * len(data[pl_type][metric])
+                        )
                     else:
-                        data_org_by_metric[pl_type].setdefault(
-                            metric, []
-                        ).append(data[pl_type][metric])
-                        revisions_org_by_metric[pl_type].setdefault(
-                            metric, []
-                        ).append(new_revisions[i])
+                        data_org_by_metric[pl_type].setdefault(metric, []).append(
+                            data[pl_type][metric]
+                        )
+                        revisions_org_by_metric[pl_type].setdefault(metric, []).append(
+                            new_revisions[i]
+                        )
 
         results = {"warm": {}, "cold": {}}
         for pl_type in ("warm", "cold"):
@@ -323,37 +336,39 @@ class RegressionDetector(SideBySide):
                     segments = [0]
                     diffs = [0]
                     prev_data_group = data_org_by_metric[pl_type][metric][0]
-                    for i, data_group in enumerate(data_org_by_metric[pl_type][metric][1:], 1):
+                    for i, data_group in enumerate(
+                        data_org_by_metric[pl_type][metric][1:], 1
+                    ):
                         m_score = scipy.stats.mannwhitneyu(
                             prev_data_group,
                             data_group,
                             alternative="two-sided",
                         )
-                        print(m_score)
-                        print(pl_type, metric)
-                        print(revisions_org_by_metric[pl_type][metric][i])
-                        # if pl_type == "cold" and metric == "fnbpaint":
-                        #     plt.figure()
-                        #     plt.scatter(prev_data_group, [0] * len(prev_data_group), label=revisions_org_by_metric[pl_type][metric][i-1])
-                        #     plt.scatter(data_group, [1] * len(data_group), label=revisions_org_by_metric[pl_type][metric][i])
-                        #     plt.legend()
-                        #     plt.show()
+                        print("\nCurrent score: ", m_score)
+                        print("Metric: ", pl_type, metric)
+                        print("Revision: ", revisions_org_by_metric[pl_type][metric][i])
 
                         window = 0
                         while (
-                            (window + 1) <= MAX_WINDOW and
-                            m_score.pvalue < 0.06 and
-                            m_score.pvalue > 0.001
+                            (window + 1) <= MAX_WINDOW
+                            and m_score.pvalue < 0.06
+                            and m_score.pvalue > 0.001
                         ):
                             # For scores that are borderline, try to improve it by adding data to both sides.
                             # At the moment, this is very experimental, but it theoretically can improve, and
                             # has improved results already.
                             window += 1
                             print("Recomputing %s" % str(m_score))
-                            if i-(window+1) >= 0:
-                                prev_data_group.extend(data_org_by_metric[pl_type][metric][i-(window+1)])
-                            if i+window < len(data_org_by_metric[pl_type][metric]):
-                                data_group.extend(data_org_by_metric[pl_type][metric][i+window])
+                            if i - (window + 1) >= 0:
+                                prev_data_group.extend(
+                                    data_org_by_metric[pl_type][metric][
+                                        i - (window + 1)
+                                    ]
+                                )
+                            if i + window < len(data_org_by_metric[pl_type][metric]):
+                                data_group.extend(
+                                    data_org_by_metric[pl_type][metric][i + window]
+                                )
 
                             m_score = scipy.stats.mannwhitneyu(
                                 prev_data_group,
@@ -361,6 +376,7 @@ class RegressionDetector(SideBySide):
                                 alternative="two-sided",
                             )
                             print("Recomputed to %s" % str(m_score))
+                        print("New score: ", m_score)
 
                         if m_score.pvalue <= 0.001:
                             # Check if the differences in the median cross the threshold
@@ -370,8 +386,8 @@ class RegressionDetector(SideBySide):
 
                             # MWU results is U1, use effect size from here:
                             # https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test#Rank-biserial_correlation
-                            effect_size = (
-                                (2 * m_score.statistic) / (len(prev_data_group) * len(data_group))
+                            effect_size = (2 * m_score.statistic) / (
+                                len(prev_data_group) * len(data_group)
                             )
 
                             # Get a threshold to apply based on the noise, and
@@ -382,7 +398,13 @@ class RegressionDetector(SideBySide):
                             threshold = (prev_std + (prev_med * fuzz)) / prev_med
                             diff = abs(prev_med - curr_med) / prev_med
                             if diff > threshold:
-                                print(f"**** Found difference:", threshold, diff, effect_size, "*******")
+                                print(
+                                    f"**** Found difference:",
+                                    threshold,
+                                    diff,
+                                    effect_size,
+                                    "*******",
+                                )
                                 segments.append(i)
                                 diffs.append(diff)
 
@@ -395,8 +417,6 @@ class RegressionDetector(SideBySide):
 
                 results[pl_type][metric] = segments, diffs
 
-        print(results)
-
         all_regressing_revisions = set()
         regressed_metric_revisions = {"warm": {}, "cold": {}}
         for pl_type in ("warm", "cold"):
@@ -408,18 +428,13 @@ class RegressionDetector(SideBySide):
 
                 # TODO: Take into account the difference in someway
                 for regressing_index in segments[1:-1]:
-                    revision = revisions_org_by_metric[pl_type][metric][regressing_index]
-                    regressed_metric_revisions[pl_type].setdefault(metric, {}).setdefault(
-                        revision, []
-                    ).append(
+                    revision = revisions_org_by_metric[pl_type][metric][
                         regressing_index
-                    )
-                    print(revision)
+                    ]
+                    regressed_metric_revisions[pl_type].setdefault(
+                        metric, {}
+                    ).setdefault(revision, []).append(regressing_index)
                     all_regressing_revisions |= set([revision])
-
-        print(revisions_org_by_metric)
-        print(regressed_metric_revisions)
-        print(all_regressing_revisions)
 
         print("Regressed, and ordered revisions:")
         # for revision, _, _, _ in revisions:
@@ -443,11 +458,10 @@ class RegressionDetector(SideBySide):
         print("Overall result:")
         for revision, _, _, _ in revisions:
             if revision in all_regressing_revisions:
-                print(
-                    f"{revision} REGRESSION"
-                )
+                print(f"{revision} REGRESSION")
             else:
                 print(f"{revision} NO-CHANGE")
+
 
 if __name__ == "__main__":
     detector = RegressionDetector("/home/sparky/mozilla-source/detector-testing/")
