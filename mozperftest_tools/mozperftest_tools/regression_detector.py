@@ -31,6 +31,7 @@ TODO:
 """
 
 ALLOWED_METHODS = ["mwu"]
+MAX_WINDOW = 1
 
 
 class MethodNotFoundError(Exception):
@@ -38,9 +39,26 @@ class MethodNotFoundError(Exception):
     pass
 
 
+class ZeroDepthError(Exception):
+    """Raised when the auto-computed depth is zero."""
+    pass
+
+
+class BranchMismatchError(Exception):
+    """Raised when branches do not match."""
+    pass
+
+
+class NoDataError(Exception):
+    """Raised when we can't find enough data."""
+    pass
+
+
 class RegressionDetector(SideBySide):
     def __init__(self, output_dir, method="mwu"):
         self._output_dir = pathlib.Path(output_dir).resolve()
+        self._cache = None
+
         self.method = method
         if method not in ALLOWED_METHODS:
             raise MethodNotFoundError(f"Unknown method: {method}")
@@ -51,8 +69,23 @@ class RegressionDetector(SideBySide):
         Either the entire range of pushes from start (base) to end (new)
         is returned or a maximum of "depth" number of pushes (end-depth).
         """
+        end_id = get_revision_json(end, branch=branch, cache=self._cache)["pushid"]
+        if depth == -1:
+            # We need to determine the depth to search
+            if start == end:
+                raise ZeroDepthError(
+                    "The starting, and ending revisions can't be the same when"
+                    "depth is set to -1 (auto-computed)."
+                )
+            start_info = get_revision_json(start, branch=branch, cache=self._cache)
+            depth = (int(end_id) - int(start_info["pushid"])) + 1
+            print(f"Using an auto-computed depth of {depth} to gather revisions")
         pushes = get_pushes(
-            branch, get_revision_json(end)["pushid"], depth, True
+            branch,
+            end_id,
+            depth,
+            True,
+            cache=self._cache,
         )
 
         push_revisions = []
@@ -77,6 +110,8 @@ class RegressionDetector(SideBySide):
                     pl_type = "cold"
 
                 for subtest in suite["subtests"]:
+                    if "cputime" in subtest["name"].lower():
+                        continue
                     # Each entry here will be a single retrigger of
                     # the test for the requested metric (ordered
                     # based on the `files` ordering)
@@ -130,13 +165,18 @@ class RegressionDetector(SideBySide):
             output = output.parents[0]
             output.mkdir(parents=True, exist_ok=True)
 
+        # Make a cache for the push revision downloads which can require
+        # a lot of artifacts to find enough data
+        self._cache = pathlib.Path(output, ".cache")
+        self._cache.mkdir(exist_ok=True)
+
         revisions = [
             (base_revision, base_branch, test_name, platform),
             (new_revision, new_branch, new_test_name, new_platform)
         ]
         if depth is not None:
             if base_branch != new_branch:
-                raise Exception(
+                raise BranchMismatchError(
                     "Can't compare using depth across multiple branches! "
                     f"{base_branch} != {new_branch}"
                 )
@@ -173,7 +213,7 @@ class RegressionDetector(SideBySide):
         for (revision, branch, _, _) in revisions:
             print("walewalhlhelhewalh")
             all_revision_ids.append(
-                find_task_group_id(revision, branch, search_crons=True)
+                find_task_group_id(revision, branch, search_crons=True, cache=self._cache)
             )
 
         all_revision_dirs = [
@@ -225,7 +265,7 @@ class RegressionDetector(SideBySide):
 
         if len([paths for paths in all_revision_data_paths if paths]) < 2:
             print("All paths found: %s" % all_revision_data_paths)
-            raise Exception("Not enough artifacts downloaded, can't compare! ")
+            raise NoDataError("Not enough artifacts downloaded, can't compare! ")
         
         all_revision_data = []
         for revision_data_paths in all_revision_data_paths:
@@ -289,14 +329,50 @@ class RegressionDetector(SideBySide):
                             data_group,
                             alternative="two-sided",
                         )
-
                         print(m_score)
+                        print(pl_type, metric)
                         print(revisions_org_by_metric[pl_type][metric][i])
-                        if m_score.pvalue < 0.01:
+                        # if pl_type == "cold" and metric == "fnbpaint":
+                        #     plt.figure()
+                        #     plt.scatter(prev_data_group, [0] * len(prev_data_group), label=revisions_org_by_metric[pl_type][metric][i-1])
+                        #     plt.scatter(data_group, [1] * len(data_group), label=revisions_org_by_metric[pl_type][metric][i])
+                        #     plt.legend()
+                        #     plt.show()
+
+                        window = 0
+                        while (
+                            (window + 1) <= MAX_WINDOW and
+                            m_score.pvalue < 0.06 and
+                            m_score.pvalue > 0.001
+                        ):
+                            # For scores that are borderline, try to improve it by adding data to both sides.
+                            # At the moment, this is very experimental, but it theoretically can improve, and
+                            # has improved results already.
+                            window += 1
+                            print("Recomputing %s" % str(m_score))
+                            if i-(window+1) >= 0:
+                                prev_data_group.extend(data_org_by_metric[pl_type][metric][i-(window+1)])
+                            if i+window < len(data_org_by_metric[pl_type][metric]):
+                                data_group.extend(data_org_by_metric[pl_type][metric][i+window])
+
+                            m_score = scipy.stats.mannwhitneyu(
+                                prev_data_group,
+                                data_group,
+                                alternative="two-sided",
+                            )
+                            print("Recomputed to %s" % str(m_score))
+
+                        if m_score.pvalue <= 0.001:
                             # Check if the differences in the median cross the threshold
                             prev_med = np.median(prev_data_group)
                             prev_std = np.std(prev_data_group)
                             curr_med = np.median(data_group)
+
+                            # MWU results is U1, use effect size from here:
+                            # https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test#Rank-biserial_correlation
+                            effect_size = (
+                                (2 * m_score.statistic) / (len(prev_data_group) * len(data_group))
+                            )
 
                             # Get a threshold to apply based on the noise, and
                             # then check if against the %-difference between
@@ -306,7 +382,7 @@ class RegressionDetector(SideBySide):
                             threshold = (prev_std + (prev_med * fuzz)) / prev_med
                             diff = abs(prev_med - curr_med) / prev_med
                             if diff > threshold:
-                                print(f"**** Found difference:", threshold, diff, "*******")
+                                print(f"**** Found difference:", threshold, diff, effect_size, "*******")
                                 segments.append(i)
                                 diffs.append(diff)
 
@@ -375,12 +451,24 @@ class RegressionDetector(SideBySide):
 
 if __name__ == "__main__":
     detector = RegressionDetector("/home/sparky/mozilla-source/detector-testing/")
+    # detector.detect_changes(
+    #     test_name="browsertime-tp6m-geckoview-sina-nofis",
+    #     platform="test-android-hw-a51-11-0-aarch64-shippable-qr/opt",
+    #     base_revision="b1dad9107c06df86f3107e58c27d88a50b6c53c1",
+    #     new_revision="b1dad9107c06df86f3107e58c27d88a50b6c53c1",
+    #     depth=20,
+    #     skip_download=True,
+    #     overwrite=False,
+    # )
     detector.detect_changes(
         test_name="browsertime-tp6m-geckoview-sina-nofis",
         platform="test-android-hw-a51-11-0-aarch64-shippable-qr/opt",
-        base_revision="b1dad9107c06df86f3107e58c27d88a50b6c53c1",
+        base_revision="9b8e7381f776fa84a55e0a764c2ed4dad82316c5",
         new_revision="b1dad9107c06df86f3107e58c27d88a50b6c53c1",
-        depth=20,
+        # Depth of -1 means auto-computed (everything in between the two given revisions),
+        # None is direct comparisons, anything else uses the new_revision as a start
+        # and goes backwards from there.
+        depth=-1,
         skip_download=True,
         overwrite=False,
     )
