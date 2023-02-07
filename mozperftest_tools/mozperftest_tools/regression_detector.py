@@ -129,6 +129,20 @@ class RegressionDetector(SideBySide):
 
         return res
 
+    def detect_all_changes(
+        self,
+        base_branch="autoland",
+        new_branch="autoland",
+        base_revision="",
+        new_revision="",
+        depth=None,
+        search_crons=True,
+        overwrite=True,
+        skip_download=False,
+    ):
+        """Detect all changes in all tests in the given revisions."""
+        pass
+
     def detect_changes(
         self,
         test_name="",
@@ -426,7 +440,6 @@ class RegressionDetector(SideBySide):
                     # There was no regression/improvment
                     continue
 
-                # TODO: Take into account the difference in someway
                 for regressing_index in segments[1:-1]:
                     revision = revisions_org_by_metric[pl_type][metric][
                         regressing_index
@@ -437,7 +450,6 @@ class RegressionDetector(SideBySide):
                     all_regressing_revisions |= set([revision])
 
         print("Regressed, and ordered revisions:")
-        # for revision, _, _, _ in revisions:
         for pl_type in ("warm", "cold"):
             for metric in results[pl_type]:
                 print(f"{pl_type} {metric}")
@@ -451,9 +463,6 @@ class RegressionDetector(SideBySide):
                         )
                     else:
                         print(f"{revision} NO-CHANGE")
-                # plt.figure()
-                # plt.plot(data_org_by_metric[pl_type][metric])
-                # plt.show()
 
         print("Overall result:")
         for revision, _, _, _ in revisions:
@@ -461,6 +470,8 @@ class RegressionDetector(SideBySide):
                 print(f"{revision} REGRESSION")
             else:
                 print(f"{revision} NO-CHANGE")
+
+        return all_regressing_revisions, regressed_metric_revisions
 
 
 if __name__ == "__main__":
