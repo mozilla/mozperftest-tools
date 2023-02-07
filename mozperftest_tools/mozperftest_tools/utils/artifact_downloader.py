@@ -15,7 +15,7 @@ except ImportError:
     from urllib import urlencode, urlretrieve
     from urllib2 import urlopen
 
-NAME_SPLITTER = "---"
+NAME_SPLITTER = "+-+"
 
 # Use this program to dowwnload, extract, and distribute artifact
 # files that are to be used for the analyses.
