@@ -1,9 +1,14 @@
-import sys
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import pathlib
+import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
 PACKAGE_VERSION = "0.2.0"
+HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
 deps = ["opencv-python", "requests"]
@@ -22,7 +27,7 @@ else:
     ])
 
 
-with open("README.md", "r", encoding="utf-8") as fh:
+with pathlib.Path(HERE, "README.md").open(encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
@@ -49,4 +54,5 @@ setuptools.setup(
     install_requires=deps,
     packages=setuptools.find_packages(where="."),
     python_requires=">=3.6, <3.10",
+    license_files = (str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
 )
