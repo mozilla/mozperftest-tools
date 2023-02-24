@@ -53,6 +53,6 @@ setuptools.setup(
     package_dir={"mozperftest_tools": "mozperftest_tools"},
     install_requires=deps,
     packages=setuptools.find_packages(where="."),
-    python_requires=">=3.6, <3.10",
+    python_requires=">=3.6, <3.11",
     license_files = (str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
 )
