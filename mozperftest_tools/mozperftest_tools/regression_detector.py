@@ -13,7 +13,6 @@ import numpy as np
 import pathlib
 import scipy
 import shutil
-from matplotlib import pyplot as plt
 
 from moz_measure_noise import step_detector
 

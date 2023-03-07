@@ -7,11 +7,11 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.2.0"
+PACKAGE_VERSION = "0.2.1"
 HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
-deps = ["opencv-python", "requests"]
+deps = ["opencv-python", "requests", "moz-measure-noise==2.59.0.2"]
 if sys.version_info <= (3, 7):
     # With versions <=3.7, we need to explicitly set
     # the max version or else pip will try to get the
