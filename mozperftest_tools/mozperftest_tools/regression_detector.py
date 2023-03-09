@@ -14,8 +14,6 @@ import pathlib
 import scipy
 import shutil
 
-from moz_measure_noise import step_detector
-
 from mozperftest_tools.side_by_side import SideBySide
 from mozperftest_tools.utils.artifact_downloader import artifact_downloader
 from mozperftest_tools.utils.task_processor import (
@@ -347,94 +345,83 @@ class ChangeDetector(SideBySide):
         results = {"warm": {}, "cold": {}}
         for pl_type in ("warm", "cold"):
             for metric in data_org_by_metric[pl_type]:
-                if use_step_detector:
-                    print("Using sliding window method")
-                    segments, diffs = step_detector.find_segments(
-                        data_org_by_metric[pl_type][metric], 1, 0.03
+                print("Using non-sliding window method")
+                segments = [0]
+                diffs = [0]
+                prev_data_group = data_org_by_metric[pl_type][metric][0]
+                for i, data_group in enumerate(
+                    data_org_by_metric[pl_type][metric][1:], 1
+                ):
+                    m_score = scipy.stats.mannwhitneyu(
+                        prev_data_group,
+                        data_group,
+                        alternative="two-sided",
                     )
-                else:
-                    print("Using non-sliding window method")
-                    segments = [0]
-                    diffs = [0]
-                    prev_data_group = data_org_by_metric[pl_type][metric][0]
-                    for i, data_group in enumerate(
-                        data_org_by_metric[pl_type][metric][1:], 1
+                    print("\nCurrent score: ", m_score)
+                    print("Metric: ", pl_type, metric)
+                    print("Revision: ", revisions_org_by_metric[pl_type][metric][i])
+
+                    window = 0
+                    while (
+                        (window + 1) <= MAX_WINDOW
+                        and m_score.pvalue < 0.06
+                        and m_score.pvalue > 0.001
                     ):
+                        # For scores that are borderline, try to improve it by adding data to both sides.
+                        # At the moment, this is very experimental, but it theoretically can improve, and
+                        # has improved results already.
+                        window += 1
+                        print("Recomputing %s" % str(m_score))
+                        if i - (window + 1) >= 0:
+                            prev_data_group.extend(
+                                data_org_by_metric[pl_type][metric][
+                                    i - (window + 1)
+                                ]
+                            )
+                        if i + window < len(data_org_by_metric[pl_type][metric]):
+                            data_group.extend(
+                                data_org_by_metric[pl_type][metric][i + window]
+                            )
+
                         m_score = scipy.stats.mannwhitneyu(
                             prev_data_group,
                             data_group,
                             alternative="two-sided",
                         )
-                        print("\nCurrent score: ", m_score)
-                        print("Metric: ", pl_type, metric)
-                        print("Revision: ", revisions_org_by_metric[pl_type][metric][i])
+                        print("Recomputed to %s" % str(m_score))
+                    print("New score: ", m_score)
 
-                        window = 0
-                        while (
-                            (window + 1) <= MAX_WINDOW
-                            and m_score.pvalue < 0.06
-                            and m_score.pvalue > 0.001
-                        ):
-                            # For scores that are borderline, try to improve it by adding data to both sides.
-                            # At the moment, this is very experimental, but it theoretically can improve, and
-                            # has improved results already.
-                            window += 1
-                            print("Recomputing %s" % str(m_score))
-                            if i - (window + 1) >= 0:
-                                prev_data_group.extend(
-                                    data_org_by_metric[pl_type][metric][
-                                        i - (window + 1)
-                                    ]
-                                )
-                            if i + window < len(data_org_by_metric[pl_type][metric]):
-                                data_group.extend(
-                                    data_org_by_metric[pl_type][metric][i + window]
-                                )
+                    if m_score.pvalue <= pvalue_threshold:
+                        # Check if the differences in the median cross the threshold
+                        prev_med = np.median(prev_data_group)
+                        prev_std = np.std(prev_data_group)
+                        curr_med = np.median(data_group)
 
-                            m_score = scipy.stats.mannwhitneyu(
-                                prev_data_group,
-                                data_group,
-                                alternative="two-sided",
+                        # MWU results is U1, use effect size from here:
+                        # https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test#Rank-biserial_correlation
+                        effect_size = (2 * m_score.statistic) / (
+                            len(prev_data_group) * len(data_group)
+                        )
+
+                        # Get a threshold to apply based on the noise, and
+                        # then check if against the %-difference between
+                        # the previous and current median. Medians are used here
+                        # since MWU is based on them as well.
+                        fuzz = absolute_diff_threshold
+                        threshold = (prev_std + (prev_med * fuzz)) / prev_med
+                        diff = abs(prev_med - curr_med) / prev_med
+                        if diff > threshold:
+                            print(
+                                f"**** Found difference:",
+                                threshold,
+                                diff,
+                                effect_size,
+                                "*******",
                             )
-                            print("Recomputed to %s" % str(m_score))
-                        print("New score: ", m_score)
+                            segments.append(i)
+                            diffs.append(diff)
 
-                        if m_score.pvalue <= pvalue_threshold:
-                            # Check if the differences in the median cross the threshold
-                            prev_med = np.median(prev_data_group)
-                            prev_std = np.std(prev_data_group)
-                            curr_med = np.median(data_group)
-
-                            # MWU results is U1, use effect size from here:
-                            # https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test#Rank-biserial_correlation
-                            effect_size = (2 * m_score.statistic) / (
-                                len(prev_data_group) * len(data_group)
-                            )
-
-                            # Get a threshold to apply based on the noise, and
-                            # then check if against the %-difference between
-                            # the previous and current median. Medians are used here
-                            # since MWU is based on them as well.
-                            fuzz = absolute_diff_threshold
-                            threshold = (prev_std + (prev_med * fuzz)) / prev_med
-                            diff = abs(prev_med - curr_med) / prev_med
-                            if diff > threshold:
-                                print(
-                                    f"**** Found difference:",
-                                    threshold,
-                                    diff,
-                                    effect_size,
-                                    "*******",
-                                )
-                                segments.append(i)
-                                diffs.append(diff)
-
-                        prev_data_group = data_group
-
-                    # Append the last index for compatibility
-                    # with the sliding window method
-                    if len(revisions) > 2 and segments[-1] != i:
-                        segments.append(i)
+                    prev_data_group = data_group
 
                 results[pl_type][metric] = segments, diffs
 
@@ -448,7 +435,7 @@ class ChangeDetector(SideBySide):
                         # There was no regression/improvment
                         continue
 
-                    for changed_index in segments[1:-1]:
+                    for changed_index in segments[1:]:
                         revision = revisions_org_by_metric[pl_type][metric][changed_index]
                         changed_metric_revisions[pl_type].setdefault(metric, {}).setdefault(
                             revision, []
@@ -490,7 +477,7 @@ class ChangeDetector(SideBySide):
 
 
 if __name__ == "__main__":
-    detector = ChangeDetector("/home/sparky/mozilla-source/detector-testing/")
+    detector = ChangeDetector("~/detector-testing/")
     detector.detect_changes(
         test_name="browsertime-tp6m-geckoview-sina-nofis",
         platform="test-android-hw-a51-11-0-aarch64-shippable-qr/opt",
