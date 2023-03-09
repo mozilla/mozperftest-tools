@@ -433,7 +433,7 @@ class ChangeDetector(SideBySide):
 
                     # Append the last index for compatibility
                     # with the sliding window method
-                    if segments[-1] != i:
+                    if len(revisions) > 2 and segments[-1] != i:
                         segments.append(i)
 
                 results[pl_type][metric] = segments, diffs
@@ -443,16 +443,26 @@ class ChangeDetector(SideBySide):
         for pl_type in ("warm", "cold"):
             for metric in results[pl_type]:
                 segments, diffs = results[pl_type][metric]
-                if len(segments) <= 2:
-                    # There was no regression/improvment
-                    continue
+                if len(revisions) > 2:
+                    if len(segments) <= 2:
+                        # There was no regression/improvment
+                        continue
 
-                for changed_index in segments[1:-1]:
-                    revision = revisions_org_by_metric[pl_type][metric][changed_index]
-                    changed_metric_revisions[pl_type].setdefault(metric, {}).setdefault(
-                        revision, []
-                    ).append(changed_index)
-                    all_changed_revisions |= set([revision])
+                    for changed_index in segments[1:-1]:
+                        revision = revisions_org_by_metric[pl_type][metric][changed_index]
+                        changed_metric_revisions[pl_type].setdefault(metric, {}).setdefault(
+                            revision, []
+                        ).append(diffs[changed_index])
+                        all_changed_revisions |= set([revision])
+                else:
+                    # For two revisions, it doesn't matter how they're ordered to
+                    # trigger a detected change.
+                    for changed_index in segments[1:]:
+                        revision = revisions_org_by_metric[pl_type][metric][changed_index]
+                        changed_metric_revisions[pl_type].setdefault(metric, {}).setdefault(
+                            revision, []
+                        ).append(diffs[changed_index])
+                        all_changed_revisions |= set([revision])                   
 
         print("Changed, and ordered revisions:")
         for pl_type in ("warm", "cold"):
@@ -463,7 +473,7 @@ class ChangeDetector(SideBySide):
                 for revision, _, _, _ in revisions:
                     if revision in changed_metric_revisions[pl_type][metric]:
                         print(
-                            f"{revision} **CHANGE** (INDEX: "
+                            f"{revision} **CHANGED** (%-DIFFERENCE: "
                             f"{changed_metric_revisions[pl_type][metric][revision]})"
                         )
                     else:
@@ -481,15 +491,6 @@ class ChangeDetector(SideBySide):
 
 if __name__ == "__main__":
     detector = ChangeDetector("/home/sparky/mozilla-source/detector-testing/")
-    # detector.detect_changes(
-    #     test_name="browsertime-tp6m-geckoview-sina-nofis",
-    #     platform="test-android-hw-a51-11-0-aarch64-shippable-qr/opt",
-    #     base_revision="b1dad9107c06df86f3107e58c27d88a50b6c53c1",
-    #     new_revision="b1dad9107c06df86f3107e58c27d88a50b6c53c1",
-    #     depth=20,
-    #     skip_download=True,
-    #     overwrite=False,
-    # )
     detector.detect_changes(
         test_name="browsertime-tp6m-geckoview-sina-nofis",
         platform="test-android-hw-a51-11-0-aarch64-shippable-qr/opt",
