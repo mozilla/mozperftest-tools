@@ -4,7 +4,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-Used to detect regressions in-tree.
+Used to detect performance changes in-tree.
 """
 
 import copy
@@ -66,7 +66,7 @@ class NoDataError(Exception):
     pass
 
 
-class RegressionDetector(SideBySide):
+class ChangeDetector(SideBySide):
     def __init__(self, output_dir, method="mwu"):
         self._output_dir = pathlib.Path(output_dir).resolve()
         self._cache = None
@@ -133,20 +133,6 @@ class RegressionDetector(SideBySide):
 
         return res
 
-    def detect_all_changes(
-        self,
-        base_branch="autoland",
-        new_branch="autoland",
-        base_revision="",
-        new_revision="",
-        depth=None,
-        search_crons=True,
-        overwrite=True,
-        skip_download=False,
-    ):
-        """Detect all changes in all tests in the given revisions."""
-        pass
-
     def detect_changes(
         self,
         test_name="",
@@ -161,6 +147,8 @@ class RegressionDetector(SideBySide):
         search_crons=True,
         overwrite=True,
         skip_download=False,
+        absolute_diff_threshold=0.02,
+        pvalue_threshold=0.05,
     ):
         """
         This method is the main method of the class and uses all other methods to make the actual side-by-side comparison.
@@ -221,9 +209,24 @@ class RegressionDetector(SideBySide):
                 )
             )
 
-        return self.compare_revisions(revisions, output, overwrite, skip_download)
+        return self.compare_revisions(
+            revisions,
+            output,
+            overwrite,
+            skip_download,
+            absolute_diff_threshold=absolute_diff_threshold,
+            pvalue_threshold=pvalue_threshold,
+        )
 
-    def compare_revisions(self, revisions, output, overwrite, skip_download):
+    def compare_revisions(
+        self,
+        revisions,
+        output,
+        overwrite,
+        skip_download,
+        absolute_diff_threshold=0.02,
+        pvalue_threshold=0.05,
+    ):
         """Compare multiple revisions together.
 
         Revisions must be ordered with the oldest first (base),
@@ -232,7 +235,7 @@ class RegressionDetector(SideBySide):
 
         # Get the task group IDs for the revisions
         all_revision_ids = []
-        for (revision, branch, _, _) in revisions:
+        for revision, branch, _, _ in revisions:
             all_revision_ids.append(
                 find_task_group_id(
                     revision, branch, search_crons=True, cache=self._cache
@@ -396,7 +399,7 @@ class RegressionDetector(SideBySide):
                             print("Recomputed to %s" % str(m_score))
                         print("New score: ", m_score)
 
-                        if m_score.pvalue <= 0.001:
+                        if m_score.pvalue <= pvalue_threshold:
                             # Check if the differences in the median cross the threshold
                             prev_med = np.median(prev_data_group)
                             prev_std = np.std(prev_data_group)
@@ -412,7 +415,7 @@ class RegressionDetector(SideBySide):
                             # then check if against the %-difference between
                             # the previous and current median. Medians are used here
                             # since MWU is based on them as well.
-                            fuzz = 0.02
+                            fuzz = absolute_diff_threshold
                             threshold = (prev_std + (prev_med * fuzz)) / prev_med
                             diff = abs(prev_med - curr_med) / prev_med
                             if diff > threshold:
@@ -435,8 +438,8 @@ class RegressionDetector(SideBySide):
 
                 results[pl_type][metric] = segments, diffs
 
-        all_regressing_revisions = set()
-        regressed_metric_revisions = {"warm": {}, "cold": {}}
+        all_changed_revisions = set()
+        changed_metric_revisions = {"warm": {}, "cold": {}}
         for pl_type in ("warm", "cold"):
             for metric in results[pl_type]:
                 segments, diffs = results[pl_type][metric]
@@ -444,42 +447,40 @@ class RegressionDetector(SideBySide):
                     # There was no regression/improvment
                     continue
 
-                for regressing_index in segments[1:-1]:
-                    revision = revisions_org_by_metric[pl_type][metric][
-                        regressing_index
-                    ]
-                    regressed_metric_revisions[pl_type].setdefault(
-                        metric, {}
-                    ).setdefault(revision, []).append(regressing_index)
-                    all_regressing_revisions |= set([revision])
+                for changed_index in segments[1:-1]:
+                    revision = revisions_org_by_metric[pl_type][metric][changed_index]
+                    changed_metric_revisions[pl_type].setdefault(metric, {}).setdefault(
+                        revision, []
+                    ).append(changed_index)
+                    all_changed_revisions |= set([revision])
 
-        print("Regressed, and ordered revisions:")
+        print("Changed, and ordered revisions:")
         for pl_type in ("warm", "cold"):
             for metric in results[pl_type]:
                 print(f"{pl_type} {metric}")
-                if metric not in regressed_metric_revisions[pl_type]:
+                if metric not in changed_metric_revisions[pl_type]:
                     continue
                 for revision, _, _, _ in revisions:
-                    if revision in regressed_metric_revisions[pl_type][metric]:
+                    if revision in changed_metric_revisions[pl_type][metric]:
                         print(
-                            f"{revision} REGRESSION (INDEX: "
-                            f"{regressed_metric_revisions[pl_type][metric][revision]})"
+                            f"{revision} **CHANGE** (INDEX: "
+                            f"{changed_metric_revisions[pl_type][metric][revision]})"
                         )
                     else:
                         print(f"{revision} NO-CHANGE")
 
         print("Overall result:")
         for revision, _, _, _ in revisions:
-            if revision in all_regressing_revisions:
-                print(f"{revision} REGRESSION")
+            if revision in all_changed_revisions:
+                print(f"{revision} **CHANGED**")
             else:
                 print(f"{revision} NO-CHANGE")
 
-        return all_regressing_revisions, regressed_metric_revisions
+        return all_changed_revisions, changed_metric_revisions
 
 
 if __name__ == "__main__":
-    detector = RegressionDetector("/home/sparky/mozilla-source/detector-testing/")
+    detector = ChangeDetector("/home/sparky/mozilla-source/detector-testing/")
     # detector.detect_changes(
     #     test_name="browsertime-tp6m-geckoview-sina-nofis",
     #     platform="test-android-hw-a51-11-0-aarch64-shippable-qr/opt",
