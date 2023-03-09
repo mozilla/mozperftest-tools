@@ -7,7 +7,7 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.2.2"
+PACKAGE_VERSION = "0.2.3"
 HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
