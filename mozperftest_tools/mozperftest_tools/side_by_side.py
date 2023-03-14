@@ -635,6 +635,10 @@ class SideBySide:
 
         # Download the artifacts
         if not skip_download:
+            print(
+                f"\nDownloading data for base revision: {base_revision}, "
+                f"task-group-ids: {base_revision_ids}\n"
+            )
             base_paths = []
             for base_revision_id in base_revision_ids:
                 if base_paths:
@@ -652,6 +656,10 @@ class SideBySide:
                 base_paths = self._search_for_paths([base_revision_id], "browsertime-results")
                 base_vismet = self._search_for_paths([base_revision_id], "perfherder-data")
 
+            print(
+                f"\nDownloading data for new revision: {new_revision}, "
+                f"task-group-ids: {new_revision_ids}\n"
+            )
             new_paths = []
             for new_revision_id in new_revision_ids:
                 if new_paths:

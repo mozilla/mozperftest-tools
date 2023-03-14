@@ -110,6 +110,12 @@ def get_task_data_paths(
         log("No run number supplied. Using the latest one, run number %s" % run_number)
 
     run_dir = os.path.join(task_dir, str(run_number))
+    if not os.path.exists(run_dir):
+        raise Exception(
+            f"No requested tasks were found for task group ID {task_group_id}"
+        )
+
+    run_dir = os.path.join(task_dir, str(run_number))
     all_suites = [
         f for f in os.listdir(run_dir) if os.path.isdir(os.path.join(run_dir, f))
     ]
