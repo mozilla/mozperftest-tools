@@ -7,21 +7,30 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.2.6"
+PACKAGE_VERSION = "0.2.7"
 HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
-deps = ["opencv-python", "requests"]
-if sys.version_info <= (3, 7):
+deps = ["requests"]
+python_version = (sys.version_info.major, sys.version_info.minor)
+if python_version <= (3, 7):
     # With versions <=3.7, we need to explicitly set
     # the max version or else pip will try to get the
     # latest version that only work with 3.8+
     deps.extend([
+        "opencv-python==4.5.4.60",
         "numpy<1.21",
         "scipy<1.8",
     ])
+elif python_version == (3, 8):
+    deps.extend([
+        "opencv-python==4.5.4.60",
+        "numpy==1.22.0",
+        "scipy==1.7.3",
+    ])
 else:
     deps.extend([
+        "opencv-python",
         "numpy",
         "scipy",
     ])
