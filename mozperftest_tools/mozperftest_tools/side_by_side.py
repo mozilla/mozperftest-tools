@@ -148,20 +148,23 @@ class SideBySide:
         plt.savefig(str(output / "%s-%s-step.png" % (prefix.rstrip("_"), metric)))
         plt.clf()
 
-    def _search_for_paths(self, rev_ids, artifact, open_data=False):
+    def _search_for_paths(self, rev_ids, artifacts, open_data=False):
+        if type(artifacts) not in (list,):
+            artifacts = [artifacts]
         found_paths = []
         for rev_id in rev_ids:
             if found_paths:
                 break
             # Get the paths to the directory holding the artifacts, the 0
             # index is because we are only looking at one suite here.
-            found_paths = list(
-                get_task_data_paths(rev_id, str(self._output_dir), artifact=artifact).values()
-            )
-            if len(found_paths) > 0:
-                found_paths = found_paths[0]
-            else:
-                found_paths = []
+            for artifact in artifacts:
+                paths = list(
+                    get_task_data_paths(rev_id, str(self._output_dir), artifact=artifact).values()
+                )
+                if len(paths[0]) > 0:
+                    found_paths.extend(paths[0])
+                else:
+                    paths = []
         return found_paths
 
     def _find_videos_with_retriggers(self, artifact_dirs, original=False):
@@ -593,6 +596,13 @@ class SideBySide:
                 "WARNING: Downloads will not be skipped as you are using something other "
                 "than the similarity metric (only supported for this metric)."
             )
+        if original:
+            artifacts_to_get = ["browsertime-videos-original"]
+        else:
+            artifacts_to_get = [
+                "browsertime-videos-annotated",
+                "browsertime-videos-original"
+            ]
 
         # Parse the given output argument
         filename = "side-by-side.mp4"
@@ -648,12 +658,15 @@ class SideBySide:
                     output_dir=str(output),
                     test_suites=[test_name],
                     platform=platform,
-                    artifact_to_get=["browsertime-results", "perfherder-data"],
+                    artifact_to_get=artifacts_to_get + ["perfherder-data"],
                     unzip_artifact=True,
                     download_failures=False,
                     ingest_continue=False,
                 )
-                base_paths = self._search_for_paths([base_revision_id], "browsertime-results")
+                base_paths = self._search_for_paths(
+                    [base_revision_id],
+                    artifacts_to_get
+                )
                 base_vismet = self._search_for_paths([base_revision_id], "perfherder-data")
 
             print(
@@ -669,18 +682,27 @@ class SideBySide:
                     output_dir=str(output),
                     test_suites=[new_test_name or test_name],
                     platform=new_platform or platform,
-                    artifact_to_get=["browsertime-results", "perfherder-data"],
+                    artifact_to_get=artifacts_to_get + ["perfherder-data"],
                     unzip_artifact=True,
                     download_failures=False,
                     ingest_continue=False,
                 )
-                new_paths = self._search_for_paths([new_revision_id], "browsertime-results")
+                new_paths = self._search_for_paths(
+                    [new_revision_id],
+                    artifacts_to_get
+                )
                 new_vismet = self._search_for_paths([new_revision_id], "perfherder-data")
         else:
-            base_paths = self._search_for_paths(base_revision_ids, "browsertime-results")
+            base_paths = self._search_for_paths(
+                base_revision_ids,
+                artifacts_to_get
+            )
             base_vismet = self._search_for_paths(base_revision_ids, "perfherder-data")
 
-            new_paths = self._search_for_paths(new_revision_ids, "browsertime-results")
+            new_paths = self._search_for_paths(
+                new_revision_ids,
+                artifacts_to_get
+            )
             new_vismet = self._search_for_paths(new_revision_ids, "perfherder-data")
 
         # Make sure we only downloaded one task

@@ -237,9 +237,9 @@ def extract_tgz(tar_url, extract_path="."):
             extract(item.name, "./" + item.name[: item.name.rfind("/")])
 
 
-def unzip_file(abs_zip_path, output_dir, count=0):
+def unzip_file(abs_zip_path, artifact_name, artifact_mapping, count=0):
     tmp_path = ""
-    tmp_path = os.path.join(output_dir, str(count))
+    tmp_path = os.path.join(artifact_mapping[artifact_name], str(count))
     if not os.path.exists(tmp_path):
         make_count_dir(tmp_path)
     if abs_zip_path.endswith(".zip"):
@@ -249,8 +249,8 @@ def unzip_file(abs_zip_path, output_dir, count=0):
         task_id = os.path.split(abs_zip_path)[1].split(NAME_SPLITTER)[0]
         extract_tgz(abs_zip_path, tmp_path)
         os.rename(
-            os.path.join(tmp_path, "browsertime-results"),
-            os.path.join(tmp_path, task_id + NAME_SPLITTER + "browsertime-results"),
+            os.path.join(tmp_path, artifact_name),
+            os.path.join(tmp_path, task_id + NAME_SPLITTER + artifact_name),
         )
     return tmp_path
 
@@ -486,17 +486,17 @@ def artifact_downloader(
                             return
 
                     for artifact in artifacts:
-                        aname = _pattern_match(artifact["name"], artifact_to_get)
-                        if aname:
+                        artifact_name = _pattern_match(artifact["name"], artifact_to_get)
+                        if artifact_name:
                             filen = download_artifact(task_id, artifact, downloads_dir)
                             CURR_REQS -= 1
 
-                            if aname == "grcov" or _check_unzip(filen):
-                                unzip_file(filen, data_dir[aname], test_counter)
+                            if artifact_name == "grcov" or _check_unzip(filen):
+                                unzip_file(filen, artifact_name, data_dir, test_counter)
                             else:
-                                move_file(filen, data_dir[aname], test_counter)
+                                move_file(filen, data_dir[artifact_name], test_counter)
                             taskid_to_file_map[task_id] = os.path.join(
-                                data_dir[aname], str(test_counter)
+                                data_dir[artifact_name], str(test_counter)
                             )
                             log("Finished %s for %s" % (task_id, test_name))
                 except Exception as e:
