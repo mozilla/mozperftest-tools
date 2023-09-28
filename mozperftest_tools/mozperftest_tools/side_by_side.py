@@ -599,10 +599,7 @@ class SideBySide:
         if original:
             artifacts_to_get = ["browsertime-videos-original"]
         else:
-            artifacts_to_get = [
-                "browsertime-videos-annotated",
-                "browsertime-videos-original"
-            ]
+            artifacts_to_get = ["browsertime-videos-annotated"]
 
         # Parse the given output argument
         filename = "side-by-side.mp4"
