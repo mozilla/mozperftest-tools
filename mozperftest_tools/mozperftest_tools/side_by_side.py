@@ -27,9 +27,17 @@ except ImportError:
     from urllib2 import urlopen
 
 from mozperftest_tools.utils.artifact_downloader import artifact_downloader
-from mozperftest_tools.utils.task_processor import get_task_data_paths, match_vismets_with_videos, sorted_nicely
+from mozperftest_tools.utils.task_processor import (
+    get_task_data_paths,
+    match_vismets_with_videos,
+    sorted_nicely,
+)
 
-from mozperftest_tools.utils.utils import write_same_line, finish_same_line, find_task_group_id
+from mozperftest_tools.utils.utils import (
+    write_same_line,
+    finish_same_line,
+    find_task_group_id,
+)
 
 
 class SideBySide:
@@ -51,12 +59,12 @@ class SideBySide:
             "before_cut_vid": pathlib.Path(output_dir, "before-cut.mp4"),
             "after_cut_vid": pathlib.Path(output_dir, "after-cut.mp4"),
             "before_rs_vid": pathlib.Path(output_dir, "before-rs.mp4"),
-            "after_rs_vid": pathlib.Path(output_dir, "after-rs.mp4")
+            "after_rs_vid": pathlib.Path(output_dir, "after-rs.mp4"),
         }
         self._overlay_text = (
-                "fps=fps=60,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:"
-                + "timecode=00\\\\:00\\\\:00\\\\:00:rate=60*1000/1001:fontcolor=white:x=(w-tw)/2:"
-                + "y=10:box=1:boxcolor=0x00000000@1[vid]"
+            "fps=fps=60,drawtext=text={}\\\\ :fontsize=(h/20):fontcolor=black:y=10:"
+            + "timecode=00\\\\:00\\\\:00\\\\:00:rate=60*1000/1001:fontcolor=white:x=(w-tw)/2:"
+            + "y=10:box=1:boxcolor=0x00000000@1[vid]"
         )
         self._common_options = [
             "-map",
@@ -156,7 +164,9 @@ class SideBySide:
             # Get the paths to the directory holding the artifacts, the 0
             # index is because we are only looking at one suite here.
             found_paths = list(
-                get_task_data_paths(rev_id, str(self._output_dir), artifact=artifact).values()
+                get_task_data_paths(
+                    rev_id, str(self._output_dir), artifact=artifact
+                ).values()
             )
             if len(found_paths) > 0:
                 found_paths = found_paths[0]
@@ -174,8 +184,9 @@ class SideBySide:
 
         return results
 
-
-    def _split_browsertime_json(self, browsertime_json_path, browsertime_data, original):
+    def _split_browsertime_json(
+        self, browsertime_json_path, browsertime_data, original
+    ):
         """Returns a dictionary of the browsertime data.
 
         Resulting dictionary is formatted like so: {
@@ -188,23 +199,26 @@ class SideBySide:
         for test in browsertime_data:
             name = test.get("info", {}).get("alias")
             if not name:
-                sample_video_path = pathlib.Path(test.get("files", {}).get("video", [])[0])
+                sample_video_path = pathlib.Path(
+                    test.get("files", {}).get("video", [])[0]
+                )
                 name = "_".join(sample_video_path.parts[:-1])
 
             print(pathlib.Path(test.get("files", {}).get("video", [])[0]))
             print(browsertime_json_path.parents[0])
 
-            browsertime_data_organized.setdefault(name, []).extend([
-                str(pathlib.Path(
-                    browsertime_json_path.parents[0], file)
-                ).replace(".mp4", "-original.mp4")
-                if original
-                else str(pathlib.Path(browsertime_json_path.parents[0], file))
-                for file in test["files"]["video"]
-            ])
+            browsertime_data_organized.setdefault(name, []).extend(
+                [
+                    str(pathlib.Path(browsertime_json_path.parents[0], file)).replace(
+                        ".mp4", "-original.mp4"
+                    )
+                    if original
+                    else str(pathlib.Path(browsertime_json_path.parents[0], file))
+                    for file in test["files"]["video"]
+                ]
+            )
 
         return browsertime_data_organized
-
 
     def _find_videos(self, artifact_dir, original=False):
         # Find the cold/warm browsertime.json files
@@ -227,13 +241,17 @@ class SideBySide:
 
             return {
                 "cold": [
-                    str(pathlib.Path(cold_path.parents[0], file)).replace(".mp4", "-original.mp4")
+                    str(pathlib.Path(cold_path.parents[0], file)).replace(
+                        ".mp4", "-original.mp4"
+                    )
                     if original
                     else str(pathlib.Path(cold_path.parents[0], file))
                     for file in cold_data[0]["files"]["video"]
                 ],
                 "warm": [
-                    str(pathlib.Path(warm_path.parents[0], file)).replace(".mp4", "-original.mp4")
+                    str(pathlib.Path(warm_path.parents[0], file)).replace(
+                        ".mp4", "-original.mp4"
+                    )
                     if original
                     else str(pathlib.Path(warm_path.parents[0], file))
                     for file in warm_data[0]["files"]["video"]
@@ -242,9 +260,13 @@ class SideBySide:
         elif browsertime_json_path:
             with browsertime_json_path.open() as f:
                 browsertime_data = json.load(f)
-            return self._split_browsertime_json(browsertime_json_path, browsertime_data, original)
+            return self._split_browsertime_json(
+                browsertime_json_path, browsertime_data, original
+            )
         else:
-            raise Exception("Cannot find a browsertime.json file for the cold or warm pageloads.")
+            raise Exception(
+                "Cannot find a browsertime.json file for the cold or warm pageloads."
+            )
 
     def _open_and_organize_perfherder(self, files, metric, pageload_tests=False):
         def _open_perfherder(filen):
@@ -286,7 +308,9 @@ class SideBySide:
 
         return res
 
-    def _find_lowest_similarity(self, base_videos, new_videos, output, prefix, most_similar=False):
+    def _find_lowest_similarity(
+        self, base_videos, new_videos, output, prefix, most_similar=False
+    ):
         def _open_data(file):
             return cv2.VideoCapture(str(file))
 
@@ -299,7 +323,15 @@ class SideBySide:
         )
 
     def find_closest_videos(
-        self, base_videos, base_vismet, new_videos, new_vismet, vismetPath, output, prefix, metric
+        self,
+        base_videos,
+        base_vismet,
+        new_videos,
+        new_vismet,
+        vismetPath,
+        output,
+        prefix,
+        metric,
     ):
         base_btime_id = ""
         base_min_idx = None
@@ -372,7 +404,7 @@ class SideBySide:
         }
 
     def get_similarity(
-            self, old_videos_info, new_videos_info, output, prefix="", most_similar=False
+        self, old_videos_info, new_videos_info, output, prefix="", most_similar=False
     ):
         """Calculates a similarity score for two groupings of videos.
 
@@ -454,7 +486,9 @@ class SideBySide:
             gc.collect()
 
             for j in range(total_vids):
-                write_same_line("Comparing old video %s to new video %s" % (i + 1, j + 1))
+                write_same_line(
+                    "Comparing old video %s to new video %s" % (i + 1, j + 1)
+                )
                 if i == 0:
                     # Only calculate the histograms once; it takes time
                     datan, new_orange_frameind = _get_frames(new_videos[j])
@@ -517,11 +551,11 @@ class SideBySide:
     # by searching in the list for it (use index) to determine
     # the matching video.
     replicates = []
+
     def resample(self, cut_vid, rs_vid):
         self.clean_videos(videos=[rs_vid])
         subprocess.check_output(
-            ["ffmpeg", "-i", str(cut_vid), "-filter:v", "fps=fps=60"]
-            + [str(rs_vid)]
+            ["ffmpeg", "-i", str(cut_vid), "-filter:v", "fps=fps=60"] + [str(rs_vid)]
         )
         self.clean_videos(videos=[cut_vid])
 
@@ -605,13 +639,21 @@ class SideBySide:
         self.cut(new_video, self._vid_paths["after_cut_vid"], new_ind)
 
         # Resample
-        self.resample(self._vid_paths["before_cut_vid"], self._vid_paths["before_rs_vid"])
+        self.resample(
+            self._vid_paths["before_cut_vid"], self._vid_paths["before_rs_vid"]
+        )
         self.resample(self._vid_paths["after_cut_vid"], self._vid_paths["after_rs_vid"])
 
         # Generate the before and after videos
-        self.filter_complex(self._vid_paths["before_rs_vid"], self._vid_paths["before_vid"], "BEFORE")
-        self.filter_complex(self._vid_paths["after_rs_vid"], self._vid_paths["after_vid"], "AFTER")
-        self.generate(self._vid_paths["before_vid"], self._vid_paths["after_vid"], filename)
+        self.filter_complex(
+            self._vid_paths["before_rs_vid"], self._vid_paths["before_vid"], "BEFORE"
+        )
+        self.filter_complex(
+            self._vid_paths["after_rs_vid"], self._vid_paths["after_vid"], "AFTER"
+        )
+        self.generate(
+            self._vid_paths["before_vid"], self._vid_paths["after_vid"], filename
+        )
 
     def _handle_custom_side_by_side(
         self,
@@ -634,10 +676,14 @@ class SideBySide:
 
         overlapping_names = base_videos_names & new_videos_names
         for name in base_videos_names - overlapping_names:
-            print(f"Skipping {name} test from base videos as it can't be found in new videos")
+            print(
+                f"Skipping {name} test from base videos as it can't be found in new videos"
+            )
             del base_videos[name]
         for name in new_videos_names - overlapping_names:
-            print(f"Skipping {name} test from new videos as it can't be found in base videos")
+            print(
+                f"Skipping {name} test from new videos as it can't be found in base videos"
+            )
             del new_videos[name]
 
         # Handle naming differences between the perfherder test names, and the
@@ -709,9 +755,7 @@ class SideBySide:
                 print(
                     f"Successfully converted the side-by-side {name} "
                     f"comparison to slow motion gif: {gif_output_name}"
-                )         
-
-        
+                )
 
     def _handle_pageload_side_by_side(
         self,
@@ -866,9 +910,9 @@ class SideBySide:
         search_crons=False,
         overwrite=True,
         skip_download=False,
-        skip_slow_gif=False
+        skip_slow_gif=False,
     ):
-        '''
+        """
         This method is the main method of the class and uses all other methods to make the actual side-by-side comparison.
 
         :param test_name: The name of the test task to get videos from.
@@ -889,7 +933,7 @@ class SideBySide:
         :param skip_download: If set, we won't try to download artifacts again and we'll try using what already exists in the output folder.
         :param original: If set, use the original videos in the side-by-side instead of the postprocessed videos.
         :return:
-        '''
+        """
 
         if shutil.which("ffmpeg") is None:
             raise Exception(
@@ -1001,8 +1045,8 @@ class SideBySide:
 
         # Make sure we only downloaded one task
         failure_msg = (
-                "Not enough artifacts downloaded for %s, can't compare! "
-                + "Found paths: %s \nTry using --search-crons if you are sure the task exists."
+            "Not enough artifacts downloaded for %s, can't compare! "
+            + "Found paths: %s \nTry using --search-crons if you are sure the task exists."
         )
         if not base_paths:
             raise Exception(failure_msg % (base_revision, base_paths))
@@ -1029,9 +1073,8 @@ class SideBySide:
                 new_vismet, metric, pageload_tests=pageload_tests
             )
 
-            if (
-                not any(len(data) > 0 for data in org_new_vismet.values()) or
-                not any(len(data) > 0 for data in org_base_vismet.values())
+            if not any(len(data) > 0 for data in org_new_vismet.values()) or not any(
+                len(data) > 0 for data in org_base_vismet.values()
             ):
                 raise Exception("Could not find any data with the metric: %s" % metric)
 
