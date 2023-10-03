@@ -165,72 +165,124 @@ class SideBySide:
         return found_paths
 
     def _find_videos_with_retriggers(self, artifact_dirs, original=False):
-        results = {"cold": [], "warm": []}
+        results = {}
 
         for artifact_dir in artifact_dirs:
             videos = self._find_videos(artifact_dir, original=original)
-            results["cold"].extend(videos["cold"])
-            results["warm"].extend(videos["warm"])
+            for name in videos:
+                results.setdefault(name, []).extend(videos[name])
 
         return results
+
+
+    def _split_browsertime_json(self, browsertime_json_path, browsertime_data, original):
+        """Returns a dictionary of the browsertime data.
+
+        Resulting dictionary is formatted like so: {
+            <ALIAS>/<VIDEO-PATH-DIR>: [ ... <VIDEO-PATHS> ... ],
+            <OTHER-ALIAS>/<VIDEO-PATH-DIR>: [ ... <VIDEO-PATHS> ...],
+        }
+        """
+        browsertime_data_organized = {}
+
+        for test in browsertime_data:
+            name = test.get("info", {}).get("alias")
+            if not name:
+                sample_video_path = pathlib.Path(test.get("files", {}).get("video", [])[0])
+                name = "_".join(sample_video_path.parts[:-1])
+
+            print(pathlib.Path(test.get("files", {}).get("video", [])[0]))
+            print(browsertime_json_path.parents[0])
+
+            browsertime_data_organized.setdefault(name, []).extend([
+                str(pathlib.Path(
+                    browsertime_json_path.parents[0], file)
+                ).replace(".mp4", "-original.mp4")
+                if original
+                else str(pathlib.Path(browsertime_json_path.parents[0], file))
+                for file in test["files"]["video"]
+            ])
+
+        return browsertime_data_organized
+
 
     def _find_videos(self, artifact_dir, original=False):
         # Find the cold/warm browsertime.json files
         cold_path = ""
         warm_path = ""
-        for path in pathlib.Path(artifact_dir).rglob("*-browsertime.json"):
+        browsertime_json_path = ""
+        for path in pathlib.Path(artifact_dir).rglob("*browsertime.json"):
             if "profiling" not in path.parts:
                 if "cold" in str(path):
                     cold_path = path
                 elif "warm" in str(path):
                     warm_path = path
-        if not cold_path:
-            raise Exception("Cannot find a browsertime.json file for the cold pageloads.")
-        if not warm_path:
-            raise Exception("Cannot find a browsertime.json file for the warm pageloads.")
+                else:
+                    browsertime_json_path = path
+        if cold_path and warm_path:
+            with cold_path.open() as f:
+                cold_data = json.load(f)
+            with warm_path.open() as f:
+                warm_data = json.load(f)
 
-        with cold_path.open() as f:
-            cold_data = json.load(f)
-        with warm_path.open() as f:
-            warm_data = json.load(f)
+            return {
+                "cold": [
+                    str(pathlib.Path(cold_path.parents[0], file)).replace(".mp4", "-original.mp4")
+                    if original
+                    else str(pathlib.Path(cold_path.parents[0], file))
+                    for file in cold_data[0]["files"]["video"]
+                ],
+                "warm": [
+                    str(pathlib.Path(warm_path.parents[0], file)).replace(".mp4", "-original.mp4")
+                    if original
+                    else str(pathlib.Path(warm_path.parents[0], file))
+                    for file in warm_data[0]["files"]["video"]
+                ],
+            }
+        elif browsertime_json_path:
+            with browsertime_json_path.open() as f:
+                browsertime_data = json.load(f)
+            return self._split_browsertime_json(browsertime_json_path, browsertime_data, original)
+        else:
+            raise Exception("Cannot find a browsertime.json file for the cold or warm pageloads.")
 
-        return {
-            "cold": [
-                str(pathlib.Path(cold_path.parents[0], file)).replace(".mp4", "-original.mp4")
-                if original
-                else str(pathlib.Path(cold_path.parents[0], file))
-                for file in cold_data[0]["files"]["video"]
-            ],
-            "warm": [
-                str(pathlib.Path(warm_path.parents[0], file)).replace(".mp4", "-original.mp4")
-                if original
-                else str(pathlib.Path(warm_path.parents[0], file))
-                for file in warm_data[0]["files"]["video"]
-            ],
-        }
-
-    def _open_and_organize_perfherder(self, files, metric):
+    def _open_and_organize_perfherder(self, files, metric, pageload_tests=False):
         def _open_perfherder(filen):
             with open(filen) as f:
                 return json.load(f)
 
-        res = {"cold": [], "warm": []}
+        if pageload_tests:
+            res = {"cold": [], "warm": []}
 
-        for filen in files:
-            data = _open_perfherder(filen)
+            for filen in files:
+                data = _open_perfherder(filen)
 
-            for suite in data["suites"]:
-                pl_type = "warm"
-                if "cold" in suite["extraOptions"]:
-                    pl_type = "cold"
+                for suite in data["suites"]:
+                    pl_type = "warm"
+                    if "cold" in suite["extraOptions"]:
+                        pl_type = "cold"
 
-                for subtest in suite["subtests"]:
-                    if subtest["name"].lower() != metric.lower():
-                        continue
-                    # Each entry here will be a single retrigger of
-                    # the test for the requested metric (ordered
-                    # based on the `files` ordering)
-                    res[pl_type].append(subtest)
+                    for subtest in suite["subtests"]:
+                        if subtest["name"].lower() != metric.lower():
+                            continue
+                        # Each entry here will be a single retrigger of
+                        # the test for the requested metric (ordered
+                        # based on the `files` ordering)
+                        res[pl_type].append(subtest)
+        else:
+            res = {}
+
+            for filen in files:
+                data = _open_perfherder(filen)
+
+                for suite in data["suites"]:
+                    for subtest in suite["subtests"]:
+                        if subtest["name"].lower() != metric.lower():
+                            continue
+                        # Each entry here will be a single retrigger of
+                        # the test for the requested metric (ordered
+                        # based on the `files` ordering)
+                        res.setdefault(suite["name"], []).append(subtest)
 
         return res
 
@@ -511,7 +563,10 @@ class SideBySide:
         # Use slow motion for more subtle differences
         if slow_motion:
             fps = 80
-            path_to_gif = path_to_gif.replace(".gif", "-slow-motion.gif")
+            path_to_gif = pathlib.Path(path_to_gif.replace(".gif", "-slow-motion.gif"))
+            if path_to_gif.exists():
+                path_to_gif.unlink()
+            path_to_gif = str(path_to_gif)
 
         # Generate palette for a better quality
         subprocess.check_output(
@@ -558,7 +613,261 @@ class SideBySide:
         self.filter_complex(self._vid_paths["after_rs_vid"], self._vid_paths["after_vid"], "AFTER")
         self.generate(self._vid_paths["before_vid"], self._vid_paths["after_vid"], filename)
 
-    def run(self, test_name="", new_test_name="", platform="", new_platform="", vismetPath="", metric="speedindex", base_branch="autoland", new_branch="autoland", base_revision="", new_revision="", cold="", warm="", most_similar="", original=False, search_crons=False, overwrite=True, skip_download=False, skip_slow_gif=False):
+    def _handle_custom_side_by_side(
+        self,
+        output,
+        cold,
+        warm,
+        metric,
+        most_similar,
+        base_videos,
+        new_videos,
+        org_base_vismet,
+        org_new_vismet,
+        vismetPath,
+        skip_slow_gif,
+        filename,
+    ):
+        # Ensure we are only looking tests that are matching between new/base
+        base_videos_names = set(list(base_videos.keys()))
+        new_videos_names = set(list(new_videos.keys()))
+
+        overlapping_names = base_videos_names & new_videos_names
+        for name in base_videos_names - overlapping_names:
+            print(f"Skipping {name} test from base videos as it can't be found in new videos")
+            del base_videos[name]
+        for name in new_videos_names - overlapping_names:
+            print(f"Skipping {name} test from new videos as it can't be found in base videos")
+            del new_videos[name]
+
+        # Handle naming differences between the perfherder test names, and the
+        # test names found within the browsertime JSON
+        org_base = {}
+        org_new = {}
+        for name in overlapping_names:
+            for perfherder_name in org_base_vismet:
+                if name in perfherder_name:
+                    org_base[name] = org_base_vismet[perfherder_name]
+                    break
+            for perfherder_name in org_new_vismet:
+                if name in perfherder_name:
+                    org_new[name] = org_new_vismet[perfherder_name]
+                    break
+        org_base_vismet = org_base
+        org_new_vismet = org_new
+
+        for name in overlapping_names:
+            gc.collect()
+            print(f"Running comparison for {name} test...")
+            if metric == "similarity":
+                video_pairing = self._find_lowest_similarity(
+                    base_videos[name],
+                    new_videos[name],
+                    str(output),
+                    f"{name}_",
+                    most_similar=most_similar,
+                )
+            else:
+                video_pairing = self.find_closest_videos(
+                    base_videos[name],
+                    org_base_vismet[name],
+                    new_videos[name],
+                    org_new_vismet[name],
+                    vismetPath,
+                    str(output),
+                    f"{name}_",
+                    metric,
+                )
+
+            output_name = pathlib.Path(output, f"{name}-" + filename)
+            if output_name.exists():
+                output_name.unlink()
+            self.build_side_by_side(
+                video_pairing["oldvid"],
+                video_pairing["newvid"],
+                video_pairing["oldvid_ind"],
+                video_pairing["newvid_ind"],
+                f"{name}-" + filename,
+            )
+            print(f"Successfully built a side-by-side {name} comparison: {output_name}")
+
+            gif_output_name = pathlib.Path(
+                output, f"{name}-" + filename.replace(".mp4", ".gif")
+            )
+            if gif_output_name.exists():
+                gif_output_name.unlink()
+
+            gif_output_name = self.convert_to_gif(output_name, gif_output_name)
+            print(
+                f"Successfully converted the side-by-side {name} comparison to gif: {gif_output_name}"
+            )
+
+            if not skip_slow_gif:
+                gif_output_name = self.convert_to_gif(
+                    output_name, gif_output_name, slow_motion=True
+                )
+                print(
+                    f"Successfully converted the side-by-side {name} "
+                    f"comparison to slow motion gif: {gif_output_name}"
+                )         
+
+        
+
+    def _handle_pageload_side_by_side(
+        self,
+        output,
+        cold,
+        warm,
+        metric,
+        most_similar,
+        base_videos,
+        new_videos,
+        org_base_vismet,
+        org_new_vismet,
+        vismetPath,
+        skip_slow_gif,
+        filename,
+    ):
+        # Make sure we remove the old side-by-side visualization
+        # for the FFMPEG operations
+        cold_path = pathlib.Path(output, "cold-" + filename)
+        warm_path = pathlib.Path(output, "warm-" + filename)
+        if cold_path.exists():
+            cold_path.unlink()
+        if warm_path.exists():
+            warm_path.unlink()
+
+        run_cold = cold
+        run_warm = warm
+        if not cold and not warm:
+            run_cold = True
+            run_warm = True
+
+        # Find the worst video pairing for cold and warm
+        print("Starting comparisons, this may take a few minutes")
+        if run_cold:
+            print("Running comparison for cold pageloads...")
+            if metric == "similarity":
+                cold_pairing = self._find_lowest_similarity(
+                    base_videos["cold"],
+                    new_videos["cold"],
+                    str(output),
+                    "cold_",
+                    most_similar=most_similar,
+                )
+            else:
+                cold_pairing = self.find_closest_videos(
+                    base_videos["cold"],
+                    org_base_vismet["cold"],
+                    new_videos["cold"],
+                    org_new_vismet["cold"],
+                    vismetPath,
+                    str(output),
+                    "cold_",
+                    metric,
+                )
+        if run_warm:
+            gc.collect()
+            print("Running comparison for warm pageloads...")
+            if metric == "similarity":
+                warm_pairing = self._find_lowest_similarity(
+                    base_videos["warm"],
+                    new_videos["warm"],
+                    str(output),
+                    "warm_",
+                    most_similar=most_similar,
+                )
+            else:
+                warm_pairing = self.find_closest_videos(
+                    base_videos["warm"],
+                    org_base_vismet["warm"],
+                    new_videos["warm"],
+                    org_new_vismet["warm"],
+                    vismetPath,
+                    str(output),
+                    "warm_",
+                    metric,
+                )
+
+        # Build up the side-by-side comparisons now
+        if run_cold:
+            output_name = str(pathlib.Path(output, "cold-" + filename))
+            self.build_side_by_side(
+                cold_pairing["oldvid"],
+                cold_pairing["newvid"],
+                cold_pairing["oldvid_ind"],
+                cold_pairing["newvid_ind"],
+                "cold-" + filename,
+            )
+            print("Successfully built a side-by-side cold comparison: %s" % output_name)
+
+            gif_output_name = pathlib.Path(
+                output, "cold-" + filename.replace(".mp4", ".gif")
+            )
+            gif_output_name = self.convert_to_gif(output_name, gif_output_name)
+            print(
+                "Successfully converted the side-by-side cold comparison to gif: %s"
+                % gif_output_name
+            )
+
+            if not skip_slow_gif:
+                gif_output_name = self.convert_to_gif(
+                    output_name, gif_output_name, slow_motion=True
+                )
+                print(
+                    "Successfully converted the side-by-side cold comparison to slow motion gif: %s"
+                    % gif_output_name
+                )
+        if run_warm:
+            output_name = str(pathlib.Path(output, "warm-" + filename))
+            self.build_side_by_side(
+                warm_pairing["oldvid"],
+                warm_pairing["newvid"],
+                warm_pairing["oldvid_ind"],
+                warm_pairing["newvid_ind"],
+                "warm-" + filename,
+            )
+            print("Successfully built a side-by-side warm comparison: %s" % output_name)
+
+            gif_output_name = pathlib.Path(
+                output, "warm-" + filename.replace(".mp4", ".gif")
+            )
+            gif_output_name = self.convert_to_gif(output_name, gif_output_name)
+            print(
+                "Successfully converted the side-by-side warm comparison to gif: %s"
+                % gif_output_name
+            )
+
+            if not skip_slow_gif:
+                gif_output_name = self.convert_to_gif(
+                    output_name, gif_output_name, slow_motion=True
+                )
+                print(
+                    "Successfully converted the side-by-side warm comparison to slow motion gif: %s"
+                    % gif_output_name
+                )
+
+    def run(
+        self,
+        test_name="",
+        new_test_name="",
+        platform="",
+        new_platform="",
+        vismetPath="",
+        metric="speedindex",
+        base_branch="autoland",
+        new_branch="autoland",
+        base_revision="",
+        new_revision="",
+        cold="",
+        warm="",
+        most_similar="",
+        original=False,
+        search_crons=False,
+        overwrite=True,
+        skip_download=False,
+        skip_slow_gif=False
+    ):
         '''
         This method is the main method of the class and uses all other methods to make the actual side-by-side comparison.
 
@@ -610,15 +919,6 @@ class SideBySide:
             filename = output.name
             output = output.parents[0]
             output.mkdir(parents=True, exist_ok=True)
-
-        # Make sure we remove the old side-by-side visualization
-        # for the FFMPEG operations
-        cold_path = pathlib.Path(output, "cold-" + filename)
-        warm_path = pathlib.Path(output, "warm-" + filename)
-        if cold_path.exists():
-            cold_path.unlink()
-        if warm_path.exists():
-            warm_path.unlink()
 
         # Get the task group IDs for the revisions
         base_revision_ids = find_task_group_id(
@@ -713,127 +1013,55 @@ class SideBySide:
         base_videos = self._find_videos_with_retriggers(base_paths, original=original)
         new_videos = self._find_videos_with_retriggers(new_paths, original=original)
 
+        pageload_tests = False
+        if "tp6" in test_name or "tp6m" in test_name:
+            pageload_tests = True
+
         # If we are looking at something other than similarity,
         # prepare the data for this (open, and split between
         # cold and warm)
         if metric != "similarity":
             print("Opening, and organizing perfherder data...")
-            org_base_vismet = self._open_and_organize_perfherder(base_vismet, metric)
-            org_new_vismet = self._open_and_organize_perfherder(new_vismet, metric)
+            org_base_vismet = self._open_and_organize_perfherder(
+                base_vismet, metric, pageload_tests=pageload_tests
+            )
+            org_new_vismet = self._open_and_organize_perfherder(
+                new_vismet, metric, pageload_tests=pageload_tests
+            )
 
-            if (not org_new_vismet["cold"] and not org_new_vismet["warm"]) or (
-                not org_base_vismet["cold"] and not org_base_vismet["warm"]
+            if (
+                not any(len(data) > 0 for data in org_new_vismet.values()) or
+                not any(len(data) > 0 for data in org_base_vismet.values())
             ):
                 raise Exception("Could not find any data with the metric: %s" % metric)
 
-        run_cold = cold
-        run_warm = warm
-        if not cold and not warm:
-            run_cold = True
-            run_warm = True
-
-        # Find the worst video pairing for cold and warm
-        print("Starting comparisons, this may take a few minutes")
-        if run_cold:
-            print("Running comparison for cold pageloads...")
-            if metric == "similarity":
-                cold_pairing = self._find_lowest_similarity(
-                    base_videos["cold"],
-                    new_videos["cold"],
-                    str(output),
-                    "cold_",
-                    most_similar=most_similar,
-                )
-            else:
-                cold_pairing = self.find_closest_videos(
-                    base_videos["cold"],
-                    org_base_vismet["cold"],
-                    new_videos["cold"],
-                    org_new_vismet["cold"],
-                    vismetPath,
-                    str(output),
-                    "cold_",
-                    metric,
-                )
-        if run_warm:
-            gc.collect()
-            print("Running comparison for warm pageloads...")
-            if metric == "similarity":
-                warm_pairing = self._find_lowest_similarity(
-                    base_videos["warm"],
-                    new_videos["warm"],
-                    str(output),
-                    "warm_",
-                    most_similar=most_similar,
-                )
-            else:
-                warm_pairing = self.find_closest_videos(
-                    base_videos["warm"],
-                    org_base_vismet["warm"],
-                    new_videos["warm"],
-                    org_new_vismet["warm"],
-                    vismetPath,
-                    str(output),
-                    "warm_",
-                    metric,
-                )
-
-        # Build up the side-by-side comparisons now
-        if run_cold:
-            output_name = str(pathlib.Path(output, "cold-" + filename))
-            self.build_side_by_side(
-                cold_pairing["oldvid"],
-                cold_pairing["newvid"],
-                cold_pairing["oldvid_ind"],
-                cold_pairing["newvid_ind"],
-                "cold-" + filename,
+        if pageload_tests:
+            self._handle_pageload_side_by_side(
+                output,
+                cold,
+                warm,
+                metric,
+                most_similar,
+                base_videos,
+                new_videos,
+                org_base_vismet,
+                org_new_vismet,
+                vismetPath,
+                skip_slow_gif,
+                filename,
             )
-            print("Successfully built a side-by-side cold comparison: %s" % output_name)
-
-            gif_output_name = pathlib.Path(
-                output, "cold-" + filename.replace(".mp4", ".gif")
+        else:
+            self._handle_custom_side_by_side(
+                output,
+                cold,
+                warm,
+                metric,
+                most_similar,
+                base_videos,
+                new_videos,
+                org_base_vismet,
+                org_new_vismet,
+                vismetPath,
+                skip_slow_gif,
+                filename,
             )
-            gif_output_name = self.convert_to_gif(output_name, gif_output_name)
-            print(
-                "Successfully converted the side-by-side cold comparison to gif: %s"
-                % gif_output_name
-            )
-            print(
-                "Successfully converted the side-by-side cold comparison to slow motion gif: %s" % gif_output_name)
-
-            if not skip_slow_gif:
-                gif_output_name = self.convert_to_gif(
-                    output_name, gif_output_name, slow_motion=True
-                )
-                print(
-                    "Successfully converted the side-by-side cold comparison to slow motion gif: %s"
-                    % gif_output_name
-                )
-        if run_warm:
-            output_name = str(pathlib.Path(output, "warm-" + filename))
-            self.build_side_by_side(
-                warm_pairing["oldvid"],
-                warm_pairing["newvid"],
-                warm_pairing["oldvid_ind"],
-                warm_pairing["newvid_ind"],
-                "warm-" + filename,
-            )
-            print("Successfully built a side-by-side warm comparison: %s" % output_name)
-
-            gif_output_name = pathlib.Path(
-                output, "warm-" + filename.replace(".mp4", ".gif")
-            )
-            gif_output_name = self.convert_to_gif(output_name, gif_output_name)
-            print(
-                "Successfully converted the side-by-side warm comparison to gif: %s"
-                % gif_output_name
-            )
-
-            if not skip_slow_gif:
-                gif_output_name = self.convert_to_gif(
-                    output_name, gif_output_name, slow_motion=True
-                )
-                print(
-                    "Successfully converted the side-by-side warm comparison to slow motion gif: %s"
-                    % gif_output_name
-                )
