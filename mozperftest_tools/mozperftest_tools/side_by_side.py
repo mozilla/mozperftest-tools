@@ -593,6 +593,10 @@ class SideBySide:
                 "WARNING: Downloads will not be skipped as you are using something other "
                 "than the similarity metric (only supported for this metric)."
             )
+        if original:
+            artifact_to_get = "browsertime-videos-original"
+        else:
+            artifact_to_get = "browsertime-videos-annotated"
 
         # Parse the given output argument
         filename = "side-by-side.mp4"
@@ -648,12 +652,15 @@ class SideBySide:
                     output_dir=str(output),
                     test_suites=[test_name],
                     platform=platform,
-                    artifact_to_get=["browsertime-results", "perfherder-data"],
+                    artifact_to_get=[artifact_to_get, "perfherder-data"],
                     unzip_artifact=True,
                     download_failures=False,
                     ingest_continue=False,
                 )
-                base_paths = self._search_for_paths([base_revision_id], "browsertime-results")
+                base_paths = self._search_for_paths(
+                    [base_revision_id],
+                    artifact_to_get
+                )
                 base_vismet = self._search_for_paths([base_revision_id], "perfherder-data")
 
             print(
@@ -669,18 +676,27 @@ class SideBySide:
                     output_dir=str(output),
                     test_suites=[new_test_name or test_name],
                     platform=new_platform or platform,
-                    artifact_to_get=["browsertime-results", "perfherder-data"],
+                    artifact_to_get=[artifact_to_get, "perfherder-data"],
                     unzip_artifact=True,
                     download_failures=False,
                     ingest_continue=False,
                 )
-                new_paths = self._search_for_paths([new_revision_id], "browsertime-results")
+                new_paths = self._search_for_paths(
+                    [new_revision_id],
+                    artifact_to_get
+                )
                 new_vismet = self._search_for_paths([new_revision_id], "perfherder-data")
         else:
-            base_paths = self._search_for_paths(base_revision_ids, "browsertime-results")
+            base_paths = self._search_for_paths(
+                base_revision_ids,
+                artifact_to_get
+            )
             base_vismet = self._search_for_paths(base_revision_ids, "perfherder-data")
 
-            new_paths = self._search_for_paths(new_revision_ids, "browsertime-results")
+            new_paths = self._search_for_paths(
+                new_revision_ids,
+                artifact_to_get
+            )
             new_vismet = self._search_for_paths(new_revision_ids, "perfherder-data")
 
         # Make sure we only downloaded one task
