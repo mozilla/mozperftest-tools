@@ -1,0 +1,1145 @@
+[{
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-amazon",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 22.79166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-bing-search",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.875
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-ebay",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 23.10833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-facebook",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 28.04166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-fandom",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.74166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-docs",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 29.43333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-mail",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 17.5
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-search",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 17.925
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-slides",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 21.80833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-imdb",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 37.13333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-linkedin",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.325
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-microsoft",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 26.94166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-netflix",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 28.16666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-outlook",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.26666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-paypal",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 17.95
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-pinterest",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 24.85833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-reddit",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.65833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-tumblr",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.63333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-twitch",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 27.33333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-twitter",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.375
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-wikipedia",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.39166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-yahoo-mail",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 16.625
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chrome-youtube",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.96666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-amazon",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 23.86666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-bing-search",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.13333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-ebay",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 24.41666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-facebook",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 28.56666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-fandom",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 21.01666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-docs",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 30.8
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-mail",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 17.53333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-search",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.41666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-slides",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 23.1
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-imdb",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 27.15
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-linkedin",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.51666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-microsoft",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 30.98333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-netflix",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 27.55
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-outlook",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.73333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-paypal",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.23333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-pinterest",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 24.15
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-reddit",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.01666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-tumblr",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 21.61666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-twitch",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 26.16666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-twitter",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.45
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-wikipedia",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.0
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-yahoo-mail",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 17.01666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-chromium-youtube",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.65
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-amazon",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 23.05833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-bing-search",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 23.03333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-ebay",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 30.625
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-facebook",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 28.63333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-fandom",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 21.80833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-docs",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 24.66666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-mail",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 17.94166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-search",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.41666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-slides",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 21.55
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-linkedin",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.275
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-netflix",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 29.6
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-outlook",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.24166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-paypal",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 18.28333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-pinterest",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 27.74166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-reddit",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 22.03333333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-tumblr",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 23.45833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-twitch",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 27.09166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-twitter",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.7
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-wikipedia",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 19.35833333
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-yahoo-mail",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 17.51666667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-firefox-youtube",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 20.99166667
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-live-sheriffed-firefox-cnn",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 23.0
+}, {
+	"name": "test-linux1804-64-shippable-qr/opt-browsertime-tp6-profiling-firefox-amazon",
+	"platform": "linux1804-64-shippable-qr",
+	"CPU Minutes Spent": 8.38333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-firefox-tumblr",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 29.60581395
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-firefox-twitch",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 38.51666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-firefox-wikia",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 32.01821705
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-firefox-youtube",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 26.79651163
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-amazon",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 23.34166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-bing-search",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.13333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-ebay",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.58333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-facebook",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 27.93333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-fandom",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.84166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-docs",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 25.30833333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-mail",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.36666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-search",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 16.88333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-slides",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.85
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-imdb",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 26.53333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-linkedin",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.38333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-microsoft",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.45
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-netflix",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 26.85
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-outlook",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.39166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-paypal",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 16.975
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-pinterest",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 21.41666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-reddit",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 19.04166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-tumblr",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 19.16666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-twitch",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 23.85
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-twitter",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 17.1
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-wikipedia",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.28333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-yahoo-mail",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 16.19166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chrome-youtube",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 19.83333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-amazon",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 23.06666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-bing-search",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.9
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-facebook",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 27.6
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-fandom",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.15
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-docs",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 24.1
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-mail",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 17.8
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-search",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 16.98333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-slides",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 21.11666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-imdb",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 21.81666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-linkedin",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.41666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-microsoft",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.16666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-outlook",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.43333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-paypal",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 17.21666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-pinterest",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 21.46666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-reddit",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.48333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-tumblr",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.21666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-twitch",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 21.28333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-twitter",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.08333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-chromium-youtube",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 19.63333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-amazon",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 24.34166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-bing-search",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 23.06666667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-ebay",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 30.44166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-facebook",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 28.75833333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-fandom",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 22.675
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-docs",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 24.85
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-mail",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 17.78333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-search",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 18.05833333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-slides",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.79166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-imgur",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 57.93333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-linkedin",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 19.68333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-microsoft",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 21.89166667
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-netflix",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 28.425
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-outlook",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 20.40833333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-paypal",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 17.925
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-pinterest",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 29.13333333
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-reddit",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 22.7
+}, {
+	"name": "test-macosx1015-64-shippable-qr/opt-browsertime-tp6-live-firefox-tumblr",
+	"platform": "macosx1015-64-shippable-qr",
+	"CPU Minutes Spent": 24.13333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-reddit-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 28.625
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-reddit-thread-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 30.24166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-rumble-fox-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 29.23333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-stackoverflow-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 30.70833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-stackoverflow-question-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 30.40833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-urbandictionary-define-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 29.86666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-web-de-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 30.325
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-wikipedia-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 28.66666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-youtube-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 28.89166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-chrome-m-youtube-watch-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 29.40833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-allrecipes-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.01666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-amazon-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.09166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-amazon-search-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.175
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-bing-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.60833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-bing-search-restaurants-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.6
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-booking-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.20833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-booking-sf-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.10833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-cnn-ampstories-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.74166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-cnn-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 48.225
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-dailymail-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.33333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-discord-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.26666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-ebay-kleinanzeigen-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.58333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-ebay-kleinanzeigen-search-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.05
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-espn-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.51666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-expedia-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 43.175
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-fashionbeans-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.11666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-google-accounts-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.73333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-google-maps-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.725
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-google-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.275
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-google-search-restaurants-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.175
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-imdb-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 47.63333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-instagram-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.78333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-medium-article-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.75
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-microsoft-support-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.425
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-nytimes-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 41.85
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-people-article-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.89166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-reddit-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.625
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-reddit-thread-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.69166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-rumble-fox-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.66666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-stackoverflow-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.7
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-stackoverflow-question-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.475
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-urbandictionary-define-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.88333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-web-de-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.325
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-wikia-marvel-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.70833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-wikipedia-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.0
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-youtube-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.89166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-fenix-youtube-watch-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.73333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-allrecipes-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.11666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-amazon-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.675
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-amazon-search-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.975
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-bing-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.40833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-bing-search-restaurants-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.45
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-booking-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.10833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-booking-sf-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 39.21666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-cnn-ampstories-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.79652778
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-cnn-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.96666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-dailymail-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.63333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-discord-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 35.86666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-ebay-kleinanzeigen-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.85833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-ebay-kleinanzeigen-search-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.58333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-espn-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.95833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-expedia-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.65
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-fashionbeans-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.70833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-google-accounts-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.71666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-google-maps-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.05
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-google-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.66666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-google-search-restaurants-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.3
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-imdb-firefox-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 44.00833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-imdb-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 41.71666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-instagram-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.1
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-medium-article-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.53333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-microsoft-support-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.29166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-nytimes-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 40.025
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-people-article-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.96666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-reddit-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.36666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-reddit-thread-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.51666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-rumble-fox-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.61666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-stackoverflow-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.775
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-stackoverflow-question-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.76666667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-urbandictionary-define-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.24166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-web-de-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 38.29166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-wikia-marvel-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.53333333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-wikipedia-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.89166667
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-youtube-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 37.45833333
+}, {
+	"name": "test-android-hw-a51-11-0-aarch64-shippable-qr/opt-browsertime-tp6m-live-geckoview-youtube-watch-nofis",
+	"platform": "android-hw-a51-11-0-aarch64-shippable-qr",
+	"CPU Minutes Spent": 36.74166667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-amazon",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 21.68333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-bing-search",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 18.80833333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-ebay",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 21.46666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-facebook",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 27.6
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-fandom",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.11666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-docs",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 25.51666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-mail",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.3
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-search",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.35
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-google-slides",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 20.83333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-imdb",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 31.4
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-linkedin",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.63333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-microsoft",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 23.21666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-outlook",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.325
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-paypal",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.10833333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-pinterest",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 22.31666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-reddit",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.275
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-tumblr",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 20.83333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-twitch",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 25.59166667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-twitter",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.48333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-wikipedia",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.85833333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-yahoo-mail",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 16.48333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chrome-youtube",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 20.075
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-amazon",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 22.58333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-bing-search",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.31666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-ebay",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 26.91666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-facebook",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 28.18333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-fandom",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.73333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-docs",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 26.98333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-mail",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.61666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-search",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.58333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-google-slides",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 22.01666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-linkedin",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 18.0
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-microsoft",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 22.95
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-outlook",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.88333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-paypal",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 18.05
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-pinterest",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 22.46666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-reddit",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.88333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-tumblr",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 22.71666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-twitch",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 23.11666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-twitter",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 18.41666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-wikipedia",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.36666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-yahoo-mail",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 16.71666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-chromium-youtube",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.26666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-amazon",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 22.41666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-bing-search",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 25.4
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-ebay",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 28.68333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-facebook",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 28.1
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-fandom",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 21.14166667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-docs",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 23.96666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-mail",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.94166667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-search",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.95
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-google-slides",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 20.45
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-imdb",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 34.86666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-imgur",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 27.73333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-linkedin",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 18.7
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-microsoft",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.93333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-netflix",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 27.51666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-outlook",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 20.16666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-paypal",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 17.68333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-pinterest",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 25.88333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-reddit",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 20.93333333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-tumblr",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 23.1
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-twitch",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 25.30833333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-twitter",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.19166667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-wikipedia",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 18.60833333
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-yahoo-mail",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 16.96666667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-firefox-youtube",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 20.44166667
+}, {
+	"name": "test-windows10-64-shippable-qr/opt-browsertime-tp6-live-sheriffed-firefox-cnn",
+	"platform": "windows10-64-shippable-qr",
+	"CPU Minutes Spent": 19.10833333
+}]
