@@ -12,7 +12,7 @@ HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
 deps = [
-    "requests"
+    "requests",
     "opencv-python==4.5.4.60; python_version<='3.7'",
     "numpy<1.21; python_version<='3.7'",
     "scipy<1.8; python_version<='3.7'",
@@ -28,8 +28,10 @@ with pathlib.Path(HERE, "README.md").open(encoding="utf-8") as fh:
 setuptools.setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
-    description=("This repository is a collection of various tools that are useful for"
-                 "the things we do in Performance and Performance Testing. "),
+    description=(
+        "This repository is a collection of various tools that are useful for"
+        "the things we do in Performance and Performance Testing. "
+    ),
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mozilla/mozperftest-tools",
@@ -49,5 +51,5 @@ setuptools.setup(
     install_requires=deps,
     packages=setuptools.find_packages(where="."),
     python_requires=">=3.6, <3.11",
-    license_files = (str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
+    license_files=(str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
 )
