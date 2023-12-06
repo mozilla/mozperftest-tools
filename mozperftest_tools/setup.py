@@ -7,33 +7,19 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.2.8"
+PACKAGE_VERSION = "0.2.9"
 HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
-deps = ["requests"]
-python_version = (sys.version_info.major, sys.version_info.minor)
-if python_version <= (3, 7):
-    # With versions <=3.7, we need to explicitly set
-    # the max version or else pip will try to get the
-    # latest version that only work with 3.8+
-    deps.extend([
-        "opencv-python==4.5.4.60",
-        "numpy<1.21",
-        "scipy<1.8",
-    ])
-elif python_version == (3, 8):
-    deps.extend([
-        "opencv-python==4.5.4.60",
-        "numpy==1.22.0",
-        "scipy==1.7.3",
-    ])
-else:
-    deps.extend([
-        "opencv-python",
-        "numpy",
-        "scipy",
-    ])
+deps = [
+    "requests"
+    "opencv-python==4.5.4.60; python_version<='3.7'",
+    "numpy<1.21; python_version<='3.7'",
+    "scipy<1.8; python_version<='3.7'",
+    "opencv-python==4.7.0.72; python_version>='3.8'",
+    "numpy==1.23.5; python_version>='3.8'",
+    "scipy==1.9.3; python_version>='3.8'",
+]
 
 
 with pathlib.Path(HERE, "README.md").open(encoding="utf-8") as fh:
