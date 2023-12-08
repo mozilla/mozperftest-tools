@@ -2,6 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""
+IMPORTANT: Use the artifact downloader in:
+    mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py
+
+This one is not up-to-date and is an artifact of the port to the mozperftest-tools
+module.
+"""
+
 import argparse
 import json
 import os
