@@ -581,3 +581,6 @@ def main():
     )
 
     return task_dir
+
+if __name__=="__main__":
+    main()
