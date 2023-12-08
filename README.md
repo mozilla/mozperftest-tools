@@ -204,7 +204,7 @@ optional arguments:
 
 ## Artifact Downloader
 
-In `mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py` you'll find a script that lets you download large amounts of data from a specific commit. It's primarily used for downloading `browsertime-videos-original.tar.gz` files, unzipping them, and organizing them in a given folder (or the current working directory) with the top-level folder being the task-group-id of the tasks downloaded Note that it can download any of the artifacts even logs which can be useful when parsed for debugging. Subsequent runs continue using that folder, but produce an integer labelled folder representing the current run (it's possible to reuse past folders).
+In [mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py](https://github.com/mozilla/mozperftest-tools/blob/b3d3d0cabe8411d1c7ba56905e35bc462321e9e0/mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py) you'll find a script that lets you download large amounts of data from a specific commit. It's primarily used for downloading `browsertime-videos-original.tar.gz` files, unzipping them, and organizing them in a given folder (or the current working directory) with the top-level folder being the task-group-id of the tasks downloaded Note that it can download any of the artifacts even logs which can be useful when parsed for debugging. Subsequent runs continue using that folder, but produce an integer labelled folder representing the current run (it's possible to reuse past folders).
 
 See below for the options from this tool:
 ```
