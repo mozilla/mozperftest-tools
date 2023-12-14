@@ -7,7 +7,7 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.2.9"
+PACKAGE_VERSION = "0.3.2"
 HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
@@ -50,6 +50,6 @@ setuptools.setup(
     package_dir={"mozperftest_tools": "mozperftest_tools"},
     install_requires=deps,
     packages=setuptools.find_packages(where="."),
-    python_requires=">=3.6, <3.11",
+    python_requires=">=3.6",
     license_files=(str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
 )
