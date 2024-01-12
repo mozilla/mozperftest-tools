@@ -19,6 +19,8 @@ except ImportError:
     from urllib import urlencode, urlretrieve
     from urllib2 import urlopen
 
+from mozperftest_tools.utils.utils import get_tasks_in_group, TC_PREFIX
+
 NAME_SPLITTER = "+-+"
 
 # Use this program to dowwnload, extract, and distribute artifact
@@ -106,7 +108,6 @@ TOTAL_TASKS = 0
 CURR_TASK = 0
 FAILED = []
 ALL_TASKS = []
-TC_PREFIX = "https://firefox-ci-tc.services.mozilla.com/api/queue/"
 
 SECONDARYMETHOD = False
 TC_PREFIX2 = "https://firefoxci.taskcluster-artifacts.net/"
@@ -153,20 +154,6 @@ def get_task_details(task_id):
 def get_task_artifacts(task_id):
     artifacts = get_json(TC_PREFIX + "v1/task/" + task_id + "/artifacts")
     return artifacts["artifacts"]
-
-
-def get_tasks_in_group(group_id):
-    reply = get_json(
-        TC_PREFIX + "v1/task-group/" + group_id + "/list", {"limit": "200"}
-    )
-    tasks = reply["tasks"]
-    while "continuationToken" in reply:
-        reply = get_json(
-            TC_PREFIX + "v1/task-group/" + group_id + "/list",
-            {"limit": "200", "continuationToken": reply["continuationToken"]},
-        )
-        tasks += reply["tasks"]
-    return tasks
 
 
 def download_artifact(task_id, artifact, output_dir):
