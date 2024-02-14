@@ -23,7 +23,6 @@ except ImportError:
 TASK_INFO = "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/{}"
 TASK_LINK = "https://firefox-ci-tc.services.mozilla.com/tasks/{}"
 
-# [task 2024-01-22T16:46:25.247Z] 16:46:25     INFO -  'MOZHARNESS_URL': 'https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/VFKPrLacTfuDYun55so7aw/artifacts/public/build/en-US/mozharness.zip',
 MOZHARNESS_URL_MATCHER = re.compile(r"'MOZHARNESS_URL':\s'.*/task/(.*)/artifacts.*',")
 
 def commit_parser():
