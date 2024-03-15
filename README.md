@@ -201,6 +201,49 @@ optional arguments:
                         will default to side-by-side.mp4.
 ```
 
+
+## Artifact Downloader
+
+In [mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py](https://github.com/mozilla/mozperftest-tools/blob/b3d3d0cabe8411d1c7ba56905e35bc462321e9e0/mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py) you'll find a script that lets you download large amounts of data from a specific commit. It's primarily used for downloading `browsertime-videos-original.tar.gz` files, unzipping them, and organizing them in a given folder (or the current working directory) with the top-level folder being the task-group-id of the tasks downloaded Note that it can download any of the artifacts even logs which can be useful when parsed for debugging. Subsequent runs continue using that folder, but produce an integer labelled folder representing the current run (it's possible to reuse past folders).
+
+See below for the options from this tool:
+```
+$ python3 mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py --help
+usage: This tool can download artifact data from a group of taskcluster tasks. It then extracts the data, suffixes it with a number and then stores it in an output directory.
+       [-h] [--task-group-id TASK_GROUP_ID] [--test-suites-list TEST_SUITES_LIST [TEST_SUITES_LIST ...]] [--artifact-to-get ARTIFACT_TO_GET [ARTIFACT_TO_GET ...]] [--unzip-artifact]
+       [--platform PLATFORM] [--download-failures] [--ingest-continue] [--output OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --task-group-id TASK_GROUP_ID
+                        The group of tasks that should be parsed to find all the necessary data to be used in this analysis.
+  --test-suites-list TEST_SUITES_LIST [TEST_SUITES_LIST ...]
+                        The list of tests to look at. e.g. mochitest-browser-chrome-e10s-2. If it`s empty we assume that it means nothing, if `all` is given all suites will be processed.
+  --artifact-to-get ARTIFACT_TO_GET [ARTIFACT_TO_GET ...]
+                        Pattern matcher for the artifact you want to download. By default, it is set to `grcov` to get ccov artifacts. Use `per_test_coverage` to get data from test-
+                        coverage tasks.
+  --unzip-artifact      Set to False if you don`t want the artifact to be extracted.
+  --platform PLATFORM   Platform to obtain data from.
+  --download-failures   Set this flag to download data from failed tasks.
+  --ingest-continue     Continues from the same run it was doing before.
+  --output OUTPUT       This is the directory where all the download, extracted, and suffixed data will reside.
+```
+
+It's also possible to use this within a script. For instance, [see here for how it can be used to download, and retrieve an organized list of the data you want](https://github.com/mozilla/mozperftest-tools/blob/b3d3d0cabe8411d1c7ba56905e35bc462321e9e0/mozperftest_tools/mozperftest_tools/side_by_side.py#L994-L1008). You will need to install the `mozperftest-tools` module to do that:
+```
+pip install mozperftest-tools
+```
+
+The tool will be found in `mozperftest_tools.utils.artifact_downloader`, along with the helper methods for data organization in `mozperftest_tools.utils.task_processor`.
+
+To find a `task-group-id`, on Treeherder, select any task within the push you want to download from. Next, in the interface that opens at the bottom of the page, click on the ID for the `Task` in the left-most panel. For example, [this task](https://treeherder.mozilla.org/jobs?repo=mozilla-central&group_state=expanded&selectedTaskRun=AY9lVbObRn-xjRka_-f_ig.0&resultStatus=pending%2Crunning%2Csuccess%2Ctestfailed%2Cbusted%2Cexception%2Cretry%2Cusercancel&searchStr=browsertime&revision=52f516546de7ac66228e074000877d32ebf093af), has a task group id of `G-hf6KDRQiCGZsio8TvADw`. Now you can use that to compose the command for the artifacts you'd like to download. In the following example, `artifact_downloader.py` will download all tasks from that push/task-group that run on the linux platform that contain either the `browsertime-videos-original` archive, or the `perfherder-data` JSON file, and will unzip any artifacts for you - the data will be output into a folder called `test-download` in the CWD:
+`python mozperftest_tools/mozperftest_tools/utils/artifact_downloader.py --task-group-id G-hf6KDRQiCGZsio8TvADw --artifact-to-get browsertime-videos-original perfherder-data --output ./test-download/ --platform test-linux1804-64-shippable-qr/opt --test-suites-list all --unzip-artifact`
+
+For the `--platform` option, it will always need to match a platform exactly. The same is true for the `--test-suites-list` arguments (except for the special argument `all`). For instance, the task linked in the push above, has the name `test-linux1804-64-shippable-qr/opt-browsertime-tp6-essential-firefox-amazon` which has a platform of `test-linux1804-64-shippable-qr/opt`, and test suite of `browsertime-tp6-essential-firefox-amazon`.
+
+Note that for organizing the downloaded data, there are some helper functions in [mozperftest_tools/mozperftest_tools/utils/task_processor.py](https://github.com/mozilla/mozperftest-tools/blob/b3d3d0cabe8411d1c7ba56905e35bc462321e9e0/mozperftest_tools/mozperftest_tools/utils/task_processor.py). You can also have a look at the side-by-side tool's code to see an example of this.
+
+
 ## Other tools
 
 There are other useful tools in this repo as well. For instance, the `high-value-tests` folder contains logic for determining the what tests are the most valuable given a set of alerts and also produces a minimized list of tests that could catch all alerts.

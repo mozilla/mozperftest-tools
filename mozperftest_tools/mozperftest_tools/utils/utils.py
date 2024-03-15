@@ -16,6 +16,7 @@ except ImportError:
     from urllib import urlencode, urlretrieve
     from urllib2 import urlopen
 
+TC_PREFIX = "https://firefox-ci-tc.services.mozilla.com/api/queue/"
 
 TASK_IDS = (
     "https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/"
@@ -83,7 +84,7 @@ def get_revision_json(revision, branch="autoland", cache=None):
     if cached_data is not None:
         return cached_data
 
-    url = REVISION_JSON_URL.format(BRANCH_URLS.get(branch), revision)        
+    url = REVISION_JSON_URL.format(BRANCH_URLS.get(branch), revision)
     print(f"Downloading {url}...")
     r = get_json(url)
     print(f"Finished downloading {url}")
@@ -94,7 +95,7 @@ def get_revision_json(revision, branch="autoland", cache=None):
 
 def get_pushes(project, end_id, depth, full_response=False, cache=None):
     """
-    Modified version from here: 
+    Modified version from here:
     https://searchfox.org/mozilla-central/rev/
     4d2b1f753871ce514f9dccfc5b1b5e867f499229/taskcluster/
     gecko_taskgraph/actions/util.py#123-142
@@ -159,3 +160,32 @@ def find_task_group_id(revision, branch, search_crons=False, cache=None):
         task_group_ids.append(task_info["taskGroupId"])
 
     return task_group_ids
+
+
+def get_tasks_in_group(group_id):
+    reply = get_json(
+        TC_PREFIX + "v1/task-group/" + group_id + "/list", {"limit": "200"}
+    )
+    tasks = reply["tasks"]
+    while "continuationToken" in reply:
+        reply = get_json(
+            TC_PREFIX + "v1/task-group/" + group_id + "/list",
+            {"limit": "200", "continuationToken": reply["continuationToken"]},
+        )
+        tasks += reply["tasks"]
+    return tasks
+
+
+def get_tasks_in_groups(group_ids):
+    tasks = []
+    for group_id in group_ids:
+        tasks.extend(get_tasks_in_group(group_id))
+    return tasks
+
+
+def get_tasks_in_revisions(revisions, branch):
+    tasks = []
+    for rev in revisions:
+        task_group_ids = find_task_group_id(rev, branch, search_crons=True)
+        tasks.extend(get_tasks_in_groups(task_group_ids))
+    return tasks
