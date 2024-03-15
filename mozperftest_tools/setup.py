@@ -7,24 +7,19 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.2.6"
+PACKAGE_VERSION = "0.3.2"
 HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
-deps = ["opencv-python", "requests"]
-if sys.version_info <= (3, 7):
-    # With versions <=3.7, we need to explicitly set
-    # the max version or else pip will try to get the
-    # latest version that only work with 3.8+
-    deps.extend([
-        "numpy<1.21",
-        "scipy<1.8",
-    ])
-else:
-    deps.extend([
-        "numpy",
-        "scipy",
-    ])
+deps = [
+    "requests",
+    "opencv-python==4.5.4.60; python_version<='3.7'",
+    "numpy<1.21; python_version<='3.7'",
+    "scipy<1.8; python_version<='3.7'",
+    "opencv-python==4.7.0.72; python_version>='3.8'",
+    "numpy==1.23.5; python_version>='3.8'",
+    "scipy==1.9.3; python_version>='3.8'",
+]
 
 
 with pathlib.Path(HERE, "README.md").open(encoding="utf-8") as fh:
@@ -33,8 +28,10 @@ with pathlib.Path(HERE, "README.md").open(encoding="utf-8") as fh:
 setuptools.setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
-    description=("This repository is a collection of various tools that are useful for"
-                 "the things we do in Performance and Performance Testing. "),
+    description=(
+        "This repository is a collection of various tools that are useful for"
+        "the things we do in Performance and Performance Testing. "
+    ),
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mozilla/mozperftest-tools",
@@ -53,6 +50,6 @@ setuptools.setup(
     package_dir={"mozperftest_tools": "mozperftest_tools"},
     install_requires=deps,
     packages=setuptools.find_packages(where="."),
-    python_requires=">=3.6, <3.11",
-    license_files = (str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
+    python_requires=">=3.6",
+    license_files=(str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
 )
