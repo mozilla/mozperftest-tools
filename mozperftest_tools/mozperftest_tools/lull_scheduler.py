@@ -1,12 +1,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
 import json
 import pathlib
+import re
 import requests
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from mozperftest_tools.utils.utils import get_tasks_in_revisions
 
 AVG_TASK_TIME_URL = (
@@ -20,6 +20,10 @@ AVG_PLATFORM_TIME_URL = (
 LAST_TASK_RUN_DATES = (
     "https://sql.telemetry.mozilla.org/api/queries/96922/"
     "results.json?api_key=Kt78Zk1zfzJjOiRliTxKUEsUI8c0vlrPQ2m3QVjG"
+)
+NEWEST_GECKO_DECISION_TASK = (
+    "https://sql.telemetry.mozilla.org/api/queries/100281/"
+    "results.json?api_key=6fBphrbYMV2znx0EgVfm180lBxLrkbbFb2Yq6mPd"
 )
 NUMBER_TASKS_SCHEDULED_URL = "https://firefox-ci-tc.services.mozilla.com/graphql"
 NUMBER_MACHINES_AVAILABLE_URL = "https://firefox-ci-tc.services.mozilla.com/graphql"
@@ -69,9 +73,15 @@ NUMBER_MACHINES_AVAILABLE_POST_DATA = {
 }
 
 # A list of task names to schedule
-TASKS_TO_RUN_FILE = pathlib.Path(
-    pathlib.Path(__file__).parent, "sample_live_sites.json"
+FTG_URL = (
+    "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/"
+    "{}/runs/0/artifacts/public/full-task-graph.json"
 )
+CACHE_PATH = pathlib.Path("~/.lull-schedule-cache").expanduser().resolve()
+CACHE_PATH.mkdir(exist_ok=True)
+
+LULL_SCHEDULE_TIME_MATCHER = re.compile(r"(\d+)(w|d|h|m)")
+LULL_SCHEDULE_UNITS = {"w": "weeks", "d": "days", "h": "hours", "m": "minutes"}
 
 MAX_TIME_TO_ADD = 600  # minutes
 MIN_MACHINES_AVAILABLE = 10
@@ -166,8 +176,62 @@ def get_platform_name(task_name):
     return None
 
 
+def schedule_to_timedelta(schedule):
+    """Returns the time/schedule for a given task as a number of days.
+
+    Accepted time-specifiers for the string are:
+        `w` for weeks
+        `d` for days
+        `h` for hours
+        `m` for minutes
+
+    :param schedule str: The lull schedule of the task. Expected to have
+        a format such as: 1d, 1d 1w 4h, or 2w
+    :return float: The number of days (with fractional days) as a float.
+    """
+    return timedelta(**{
+        LULL_SCHEDULE_UNITS[u]: int(val)
+        for val, u in LULL_SCHEDULE_TIME_MATCHER.findall(schedule)
+    }).total_seconds()/(24*60*60)
+
+
 class LullScheduler:
+    def fetch_lull_schedule_tasks(self, task_id):
+        """Fetches all the tasks that have a lull-schedule attribute setting.
+
+        :return dict: A dictionary containing a mapping of the tasks to their
+            lull-schedule (in days).
+        """
+        ftg_download_url = FTG_URL.format(task_id)
+
+        cached_ftg = pathlib.Path(CACHE_PATH, f"{task_id}-ftg.json")
+        if cached_ftg.exists():
+            with cached_ftg.open() as f:
+                ftg = json.load(f)
+        else:
+            print(f"Downloading full-task-graph.json from: {ftg_download_url}")
+            ftg = fetch_data(ftg_download_url)
+            with cached_ftg.open("w") as f:
+                json.dump(ftg, f)
+
+        tasks = {}
+        for task, task_info in ftg.items():
+            extra = task_info.get("task", {}).get("extra", {})
+            if "lull-schedule" in extra:
+                tasks[task] = schedule_to_timedelta(extra["lull-schedule"])
+
+        return tasks
+
     def fetch_all_data(self):
+        """Performs all the requests required to get all data for decisions.
+        
+        :return tuple: A tuple containing the following (in order):
+            1. Average time a task takes to run.
+            2. Average time it takes for a task to run on a platform.
+            3. Number of tasks currently scheduled per platform.
+            4. Number of machines that are currently available to use.
+            5. Last time a given task was run (days elapsed since).
+        """
         # Get information for requests
         provision_ids = list(
             set([d["provisionerId"] for k, d in PLATFORM_TO_WORKER_TYPE.items()])
@@ -481,18 +545,27 @@ class LullScheduler:
 
 
 if __name__ == "__main__":
-    lull_scheduler = LullScheduler()
+    # Get the newest decision task with lull-schedule info
+    newest_decision_tasks = fetch_data(
+        NEWEST_GECKO_DECISION_TASK
+    )["query_result"]["data"]["rows"]
+    newest_decision_task = newest_decision_tasks[0]
 
-    # Get tasks to schedule, expected format is:
-    # {"task-name": frequency_in_days, ...}
-    tasks_to_run = None
-    with pathlib.Path(TASKS_TO_RUN_FILE).open() as f:
-        tasks_to_run = json.load(f)
-
+    # Branch is always mozilla-central
     branch = "mozilla-central"
+    revision = newest_decision_task["revision"]
+    task_id = newest_decision_task["task_id"]
+    
+    # for testing
+    task_id = "K01_nDpgQMyUf3s8rJfIxw"
     revision = "8d93c10892064c983f5603645b9f6db6494fac24"
+
+    # Get the tasks that need to be lull scheduled, then run
+    # the lull-scheduler
+    lull_scheduler = LullScheduler()
+    tasks = lull_scheduler.fetch_lull_schedule_tasks(task_id)
     tasks_selected, total_time_per_platform = lull_scheduler.run(
         revision,
         branch,
-        tasks_to_run,
+        tasks,
     )
