@@ -78,7 +78,6 @@ FTG_URL = (
     "{}/runs/0/artifacts/public/full-task-graph.json"
 )
 CACHE_PATH = pathlib.Path("~/.lull-schedule-cache").expanduser().resolve()
-CACHE_PATH.mkdir(exist_ok=True)
 
 LULL_SCHEDULE_TIME_MATCHER = re.compile(r"(\d+)(w|d|h|m)")
 LULL_SCHEDULE_UNITS = {"w": "weeks", "d": "days", "h": "hours", "m": "minutes"}
@@ -92,13 +91,13 @@ DEFAULT_TASK_FREQUENCY = 7  # days
 # TODO: See if there's a way to do this dynamically, it currently
 # restrics what platforms we can schedule on.
 PLATFORM_TO_WORKER_TYPE = {
+    "windows11-64-shippable-qr": {
+        "workerType": "win11-64-2009-hw",
+        "provisionerId": "releng-hardware",
+    },
     "windows10-64-shippable-qr": {
         "workerType": "gecko-t-win10-64-1803-hw",
         "provisionerId": "releng-hardware",
-    },
-    "android-hw-a51-11-0-aarch64-shippable-qr": {
-        "workerType": "gecko-t-bitbar-gw-perf-a51",
-        "provisionerId": "proj-autophone",
     },
     "macosx1015-64-shippable-qr": {
         "workerType": "gecko-t-osx-1015-r8",
@@ -107,6 +106,14 @@ PLATFORM_TO_WORKER_TYPE = {
     "linux1804-64-shippable-qr": {
         "workerType": "gecko-t-linux-talos-1804",
         "provisionerId": "releng-hardware",
+    },
+    "android-hw-a55-14-0-android-aarch64-shippable-qr": {
+        "workerType": "gecko-t-bitbar-gw-perf-a55",
+        "provisionerId": "proj-autophone",
+    },
+    "android-hw-a51-11-0-aarch64-shippable-qr": {
+        "workerType": "gecko-t-bitbar-gw-perf-a51",
+        "provisionerId": "proj-autophone",
     },
 }
 
@@ -164,18 +171,6 @@ def fetch_data(url):
     )
 
 
-def get_platform_name(task_name):
-    """Used to determine the platform of a task.
-
-    :param task_name str: The name of a task.
-    :return str: Returns the string of the platform, or None if not found.
-    """
-    for platform, _ in PLATFORM_TO_WORKER_TYPE.items():
-        if platform in task_name:
-            return platform
-    return None
-
-
 def schedule_to_timedelta(schedule):
     """Returns the time/schedule for a given task as a number of days.
 
@@ -196,23 +191,73 @@ def schedule_to_timedelta(schedule):
 
 
 class LullScheduler:
+    def __init__(
+        self,
+        use_cache=False,
+        cache_path=CACHE_PATH,
+        max_time_to_add=MAX_TIME_TO_ADD, # minutes
+        min_machines_available=MIN_MACHINES_AVAILABLE,
+        machine_idle_time=MACHINE_IDLE_TIME, # minutes
+        default_task_run_time=DEFAULT_TASK_RUN_TIME, # minutes
+        default_task_frequency=DEFAULT_TASK_FREQUENCY,  # days
+        platform_to_worker_type=PLATFORM_TO_WORKER_TYPE,
+    ):
+        """Initialize the lull scheduler.
+
+        :param bool use_cache: A boolean that indicates if we should use a cache
+            for the full-task-graph.json file used for determining lull-scheduling
+            frequency, and which tasks need to be lull-scheduled.
+        :param str/Path cache_path: Path to the cache for the full-task-graph.json file.
+            By default, this is `~/.lull-schedule-cache`.
+        :param int max_time_to_add: The maximum amount of time (in minutes) that
+            can be scheduled at a given time on a platform.
+        :param int min_machines_available: The minimum number of machines that must
+            be available to allow scheduling on a platform.
+        :param int machine_idle_time: The amount time (in minutes) that a machine must
+            be idle before considering it available for scheduling.
+        :param int default_task_run_time: The default run time for any given task.
+            Used when there is no information about how long a task may take (in minutes).
+        :param int default_task_frequency: The default lull schedule frequency (in days)
+            for a task that needs to be lull-scheduled.
+        :param dict platform_to_worker_type: A mapping of platform names to the
+            workerType, and provisionerId used for querying information about the
+            current workload of the platforms.
+        """
+        self.use_cache = use_cache
+        self.cache_path = cache_path
+        self.max_time_to_add = max_time_to_add
+        self.min_machines_available = min_machines_available
+        self.machine_idle_time = machine_idle_time
+        self.default_task_run_time = default_task_run_time
+        self.default_task_frequency = default_task_frequency
+        self.platform_to_worker_type = platform_to_worker_type
+
+        if self.use_cache:
+            self.cache_path = pathlib.Path(
+                self.cache_path
+            ).expanduser().resolve()
+            self.cache_path.mkdir(exist_ok=True)
+
     def fetch_lull_schedule_tasks(self, task_id):
         """Fetches all the tasks that have a lull-schedule attribute setting.
 
+        :param str task_id: A task ID of a decision task that should be used
+            to gather the full-task-graph.json from.
         :return dict: A dictionary containing a mapping of the tasks to their
             lull-schedule (in days).
         """
         ftg_download_url = FTG_URL.format(task_id)
 
-        cached_ftg = pathlib.Path(CACHE_PATH, f"{task_id}-ftg.json")
-        if cached_ftg.exists():
+        cached_ftg = pathlib.Path(self.cache_path, f"{task_id}-ftg.json")
+        if cached_ftg.exists() and self.use_cache:
             with cached_ftg.open() as f:
                 ftg = json.load(f)
         else:
             print(f"Downloading full-task-graph.json from: {ftg_download_url}")
             ftg = fetch_data(ftg_download_url)
-            with cached_ftg.open("w") as f:
-                json.dump(ftg, f)
+            if self.use_cache:
+                with cached_ftg.open("w") as f:
+                    json.dump(ftg, f)
 
         tasks = {}
         for task, task_info in ftg.items():
@@ -234,7 +279,7 @@ class LullScheduler:
         """
         # Get information for requests
         provision_ids = list(
-            set([d["provisionerId"] for k, d in PLATFORM_TO_WORKER_TYPE.items()])
+            set([d["provisionerId"] for k, d in self.platform_to_worker_type.items()])
         )
 
         # Make the requests, and reformat the data into dicts
@@ -267,7 +312,7 @@ class LullScheduler:
             )["data"]["workerTypes"]["edges"]
 
         number_machines_available = {}
-        for platform, info in PLATFORM_TO_WORKER_TYPE.items():
+        for platform, info in self.platform_to_worker_type.items():
             NUMBER_MACHINES_AVAILABLE_POST_DATA["variables"]["provisionerId"] = info[
                 "provisionerId"
             ]
@@ -311,7 +356,7 @@ class LullScheduler:
         # Get number of machines available, and that satisfies the conditions:
         # i) completed task, and ii) idle for min minutes
         platforms_to_schedule = {}
-        for platform, info in PLATFORM_TO_WORKER_TYPE.items():
+        for platform, info in self.platform_to_worker_type.items():
             platform_worker_type = info["workerType"]
             for worker_type_info in number_tasks_scheduled[info["provisionerId"]]:
                 if not (
@@ -358,17 +403,18 @@ class LullScheduler:
                     minutes_since_last_active = minutes_since(
                         latest_task["run"]["resolved"]
                     )
-                    if minutes_since_last_active >= MACHINE_IDLE_TIME:
+                    if minutes_since_last_active >= self.machine_idle_time:
                         machines_available += 1
 
                 print(f"Found {machines_available} machines available for {platform}")
-                if machines_available >= MIN_MACHINES_AVAILABLE:
+                if machines_available >= self.min_machines_available:
                     # Platform can have tasks scheduled. Determine how much time is available
                     # for tasks to run.
                     info["machines-available"] = machines_available
                     info["estimated-time-available"] = (
-                        machines_available
-                        * avg_platform_time_data[platform]["CPU Minutes Spent"]
+                        machines_available * avg_platform_time_data.get(
+                            platform, {"CPU Minutes Spent": 45}
+                        )["CPU Minutes Spent"]
                     )
                     platforms_to_schedule[platform] = info
 
@@ -384,6 +430,17 @@ class LullScheduler:
         if last_task_run_date is None:
             return False
         return float(last_task_run_date) > task_frequency
+
+    def _get_platform_name(self, task_name):
+        """Used to determine the platform of a task.
+
+        :param task_name str: The name of a task.
+        :return str: Returns the string of the platform, or None if not found.
+        """
+        for platform, _ in self.platform_to_worker_type.items():
+            if platform in task_name:
+                return platform
+        return None
 
     def select_tasks_to_run(
         self,
@@ -438,7 +495,7 @@ class LullScheduler:
             tasks_to_run.items(), key=lambda x: x[1]
         ):
             print(f"Attempting to schedule {task_to_run}")
-            task_platform = get_platform_name(task_to_run)
+            task_platform = self._get_platform_name(task_to_run)
             if task_platform is None:
                 print("Cannot schedule as the platform is unknown.")
                 continue
@@ -455,13 +512,13 @@ class LullScheduler:
                 # before or haven't run in the
                 print(
                     f"Task has unknown runtime for platform, and task. Setting to default of "
-                    f"{DEFAULT_TASK_RUN_TIME} minutes."
+                    f"{self.default_task_run_time} minutes."
                 )
-                task_runtime = {"CPU Minutes Spent": DEFAULT_TASK_RUN_TIME}
+                task_runtime = {"CPU Minutes Spent": self.default_task_run_time}
 
             # This check will make sure we don't over-schedule above the time limit
             new_total_time = current_total_time + task_runtime["CPU Minutes Spent"]
-            if new_total_time > MAX_TIME_TO_ADD:
+            if new_total_time > self.max_time_to_add:
                 print("Hit max time limit to schedule with this task. Not scheduling.")
                 continue
 
@@ -471,7 +528,7 @@ class LullScheduler:
                 continue
 
             # Check to see if the task was already run within the requested frequency
-            frequency = task_frequency or DEFAULT_TASK_FREQUENCY
+            frequency = task_frequency or self.default_task_frequency
             if self._task_was_scheduled_recently(
                 last_task_run_dates.get(task_to_run, {}).get("Days Elapsed", None),
                 frequency,
@@ -555,10 +612,6 @@ if __name__ == "__main__":
     branch = "mozilla-central"
     revision = newest_decision_task["revision"]
     task_id = newest_decision_task["task_id"]
-    
-    # for testing
-    task_id = "K01_nDpgQMyUf3s8rJfIxw"
-    revision = "8d93c10892064c983f5603645b9f6db6494fac24"
 
     # Get the tasks that need to be lull scheduled, then run
     # the lull-scheduler
