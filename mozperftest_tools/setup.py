@@ -7,7 +7,7 @@ import sys
 import setuptools
 
 PACKAGE_NAME = "mozperftest_tools"
-PACKAGE_VERSION = "0.3.2"
+PACKAGE_VERSION = "0.4.2"
 HERE = pathlib.Path(__file__).parent.resolve()
 
 # dependencies
@@ -16,7 +16,7 @@ deps = [
     "opencv-python==4.5.4.60; python_version<='3.7'",
     "numpy<1.21; python_version<='3.7'",
     "scipy<1.8; python_version<='3.7'",
-    "opencv-python==4.7.0.72; python_version>='3.8'",
+    "opencv-python==4.8.1.78; python_version>='3.8'",
     "numpy==1.23.5; python_version>='3.8'",
     "scipy==1.9.3; python_version>='3.8'",
 ]
