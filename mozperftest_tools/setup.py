@@ -51,5 +51,5 @@ setuptools.setup(
     install_requires=deps,
     packages=setuptools.find_packages(where="."),
     python_requires=">=3.6",
-    license_files=(str(pathlib.Path(HERE, "..", "LICENSE.md").resolve()),),
+    license_files="LICENSE.md",
 )
