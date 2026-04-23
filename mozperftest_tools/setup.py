@@ -17,7 +17,7 @@ deps = [
     "numpy<1.21; python_version<='3.7'",
     "scipy<1.8; python_version<='3.7'",
     "opencv-python==4.8.1.78; python_version>='3.8'",
-    "numpy>=1.23.5; python_version>='3.8'",
+    "numpy==1.23.5; python_version>='3.8'",
     "scipy==1.10.0; python_version>='3.8'",
 ]
 
